@@ -14,6 +14,7 @@ const config_1 = __importDefault(require("config"));
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 require("dotenv/config");
+const defaultCreate_1 = require("./middleware/defaultCreate");
 const router = (0, express_1.default)();
 router.set('views', path_1.default.join(__dirname, 'views'));
 router.set("view engine", "ejs");
@@ -22,6 +23,7 @@ router.use(upload.any());
 (0, utils_1.applyMiddleware)(middleware_1.default, router);
 (0, utils_1.applyRoutes)(services_1.default, router);
 (0, utils_1.applyMiddleware)(errorHandlers_1.default, router);
+(0, defaultCreate_1.defaultCreates)();
 const PORT = process.env.PORT || 9000;
 const server = http_1.default.createServer(router);
 mongoose

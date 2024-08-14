@@ -70,7 +70,7 @@ const adminSchema = new mongoose.Schema({
     },
     userType: {
         type: String,
-        default: "Admin",
+        default: "admin",
     },
 }, { timestamps: true });
 adminSchema.set('toJSON', {

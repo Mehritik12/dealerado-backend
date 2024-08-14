@@ -1,8 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import {
-  adminChangePassword,
   adminLogin,
-  adminSignUp,
   createClientAccount,
   fileUpload,
   refreshToken,
@@ -15,12 +13,10 @@ import {
 import config from "config";
 import { checkLogin, checkSignup, checkResendOTP, verifyCheck, checkAuthenticate, checkClientSignup, checkAdminSignup, checkChangeAdminPassword, checkAdminAuthenticate, checkUserStatus, checkCommonAuthentication } from "./middleware/check";
 const basePath = config.get("BASE_PATH");
-const currentPath = "auth";
-const currentPathURL = basePath;
-console.log('currentPathURL---->',currentPathURL);
+const currentPath = "auth/";
 
-// const currentPathURL = basePath + currentPath;
-
+const currentPathURL = basePath + currentPath;
+console.log(currentPathURL)
 export default [
   // Login & Ragister 
   {
@@ -100,19 +96,7 @@ export default [
   },
 
   // *********************Admin***************************************************************************************
-  // **********************************************************************************************************************
-  {
-    path: currentPathURL + "registerAdmin",
-    method: "post",
-    handler: [
-      // checkAdminSignup,
-      async (req: Request, res: Response, next: NextFunction) => {
-        const result = await adminSignUp(next);
-        res.status(200).send(result);
-      },
-    ],
-  },
-
+ 
   {
     path: currentPathURL + "loginAdmin",
     method: "post",
@@ -120,18 +104,6 @@ export default [
       checkAdminSignup,
       async (req: Request, res: Response, next: NextFunction) => {
         const result = await adminLogin(req.body, next);
-        res.status(200).send(result);
-      },
-    ],
-  },
-  {
-    path: currentPathURL + "changePassword",
-    method: "post",
-    handler: [
-      checkChangeAdminPassword,
-      checkAdminAuthenticate,
-      async (req: Request, res: Response, next: NextFunction) => {
-        const result = await adminChangePassword(req.get(config.get("AUTHORIZATION")), req.body, next);
         res.status(200).send(result);
       },
     ],

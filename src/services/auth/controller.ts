@@ -12,7 +12,6 @@ import * as bcrypt from "bcrypt";
 import moment from "moment";
 import { MailerUtilities } from "../../utils/MailerUtilities";
 const { v4: uuidv4 } = require("uuid");
-import { adminModel } from "../../db/Admin";
 import { FileUpload } from "../../utils/FileUploadUtilities";
 const admin = require("firebase-admin");
 const saltRound = 10;
@@ -20,10 +19,10 @@ import ejs from "ejs";
 import { bannerModel } from "../../db/Banner";
 
 
-admin.initializeApp({
-  credential: admin.credential.cert(config.get("USER.FIREBASE.CREDENTIALS")),
-  databaseURL: config.get("USER.FIREBASE.DATABASE"),
-});
+// admin.initializeApp({
+//   credential: admin.credential.cert(config.get("USER.FIREBASE.CREDENTIALS")),
+//   databaseURL: config.get("USER.FIREBASE.DATABASE"),
+// });
 
 //  common api for login and ragister
 export const userLogin = async (bodyData: any, next: any) => {
@@ -300,44 +299,37 @@ export const createClientAccount = async (req: any, next: any) => {
 
 //*****************admin controller************************************************************************************************************
 //************************************************************************************************************************************************
-export const adminSignUp = async (next: any) => {  
+export const createSuperAdminUser = async () => {  
   try {
     const adminData: any = {
       email: "admin@admin.com",
       password: "Qwarty@123",
+      role: "sadmin",
+      gender: "male"
     };
-    const admin = await adminModel.find({});
-    if (admin.length == 1) {
-      throw new HTTP400Error(
-        Utilities.sendResponsData({
-          code: 400,
-          message: config.get("ERRORS.ADMIN.ALREADY_EXIST"),
-        })
-      );
+    const admin = await userModel.find({role:"sadmin"});
+    if (!admin.length) {      
+      adminData.isProfileUpdate = true;
+      adminData.image =
+        "https://sipl.ind.in/wp-content/uploads/2022/07/dummy-user.png";
+      adminData.firstName = "admin";
+      adminData.userType = "admin";
+      adminData.email = adminData.email;
+      const pass: string = await bcrypt.hash(adminData.password, saltRound);
+      adminData.password = pass;
+      await userModel.create(adminData);
+      console.log('super admin created.')
     }
-    adminData.isProfileUpdate = true;
-    adminData.image =
-      "https://sipl.ind.in/wp-content/uploads/2022/07/dummy-user.png";
-    adminData.firstName = "admin";
-    adminData.userType = "admin";
-    adminData.email = adminData.email;
-    const pass: string = await bcrypt.hash(adminData.password, saltRound);
-    adminData.password = pass;
-    const adminRes = await adminModel.create(adminData);
-    return Utilities.sendResponsData({
-      code: 200,
-      message: config.get("ERRORS.ADMIN.RAGISTER"),
-    });
   } catch (error) {
-    next(error);
+    console.log(`Super Admin Create Error: ${error}`)
   }
 };
 
 export const adminLogin = async (bodyData: any, next: any) => {
   try {
     const { email, password } = bodyData;
-    const admin = await adminModel.findOne({
-      userType: "admin",
+    let admin = await userModel.findOne({
+      role: {$in:['sadmin','admin']},
       isDeleted: false,
       email: email,
     });
@@ -362,71 +354,28 @@ export const adminLogin = async (bodyData: any, next: any) => {
       id: admin._id,
       email: admin.email,
       name: admin.firstName || "",
-      role: admin.userType,
+      role: admin.role,
     });
     admin.accessToken = adminToken;
     await admin.save();
-    const userData = { ...admin };
-    const result = userData;
+    const result = JSON.parse(JSON.stringify(admin));
     return Utilities.sendResponsData({
       code: 200,
       message: config.get("ERRORS.COMMON_ERRORS.LOGIN_SUCCESS"),
-      data: result,
+      data: {...result, accessToken: adminToken}
     });
   } catch (error) {
     next(error);
   }
 };
 
-export const adminChangePassword = async (token: any, bodyData: any, next: any) => {
-  try {
-    const { oldPassword, newPassword } = bodyData;
-    const decoded: any = await Utilities.getDecoded(token);
-    let adminRes: any = await adminModel.findOne({
-      _id: mongoose.Types.ObjectId(decoded.id),
-      isDeleted: false,
-    });
-    if (adminRes) {
-      const match = await Utilities.VerifyPassword(
-        oldPassword,
-        adminRes.password
-      );
-      if (match) {
-        let hashedPassword = await Utilities.cryptPassword(newPassword);
-        adminRes.password = hashedPassword;
-        adminRes.save();
-        return Utilities.sendResponsData({
-          code: 200,
-          message: "Password updated successfully",
-        });
-      } else {
-        throw new HTTP400Error(
-          Utilities.sendResponsData({
-            code: 400,
-            message: config.get("ERRORS.ADMIN.INVALID_PASSWORD"),
-          })
-        );
-      }
-    } else {
-      throw new HTTP400Error(
-        Utilities.sendResponsData({
-          code: 400,
-          message: config.get("ERRORS.COMMON_ERRORS.USER_NOT_EXIST"),
-        })
-      );
-    }
-  } catch (error) {
-    next(error);
-  }
-};
 
 export const fileUpload = async (token: any, req: any, next: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
     let userRes: any = await userModel.findOne({ _id: mongoose.Types.ObjectId(decoded.id), isDeleted: false });
-    let adminRes: any = await adminModel.findOne({ _id: mongoose.Types.ObjectId(decoded.id), isDeleted: false });
     let bannerRes: any = await bannerModel.findOne({ _id: mongoose.Types.ObjectId(decoded.id), isDeleted: false });
-    if (userRes || adminRes || bannerRes) {
+    if (userRes || bannerRes) {
       let bodyData: any = JSON.parse(JSON.stringify(req.body));
       const fileArr: any = [];
       for (const file of req.files) {
@@ -460,8 +409,6 @@ export const refreshToken = async (token: any, next: any) => {
     const decoded: any = await Utilities.getDecoded(token);
     if(decoded){
       let userRes: any = await userModel.findOne({ _id: mongoose.Types.ObjectId(decoded?.id), isDeleted: false });
-      let updatedRes;
-  
       if (userRes) {
         let res = userRes;
         let refreshToken = await Utilities.createJWTToken({

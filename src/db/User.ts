@@ -1,6 +1,6 @@
 import moment from 'moment';
 import * as mongoose from 'mongoose';
-var gender = ['other', 'male', 'female',''];
+import { GENDERS, USER_ROLES } from '../constants';
 
 const userSchema = new mongoose.Schema({
   firstName: {
@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema({
   gender: {
     type: String,
     default: '',
-    enum: gender
+    enum: GENDERS
   },
   password: {
     type: String,
@@ -41,7 +41,8 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    default: "User",
+    default: "user",
+    enum: USER_ROLES
   },
   otp: {
     type: String,
@@ -118,7 +119,7 @@ const userSchema = new mongoose.Schema({
     default: true
   },
 },
-  { timestamps: true });
+{ timestamps: true });
 
 userSchema.set('toJSON', {
   virtuals: false, transform: (doc, ret, Options) => {

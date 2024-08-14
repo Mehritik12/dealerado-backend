@@ -16,10 +16,9 @@ const controller_1 = require("./controller");
 const config_1 = __importDefault(require("config"));
 const check_1 = require("./middleware/check");
 const basePath = config_1.default.get("BASE_PATH");
-const currentPath = "auth";
-const currentPathURL = basePath;
-console.log('currentPathURL---->', currentPathURL);
-// const currentPathURL = basePath + currentPath;
+const currentPath = "auth/";
+const currentPathURL = basePath + currentPath;
+console.log(currentPathURL);
 exports.default = [
     // Login & Ragister 
     {
@@ -92,18 +91,6 @@ exports.default = [
         ],
     },
     // *********************Admin***************************************************************************************
-    // **********************************************************************************************************************
-    {
-        path: currentPathURL + "registerAdmin",
-        method: "post",
-        handler: [
-            // checkAdminSignup,
-            (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-                const result = yield (0, controller_1.adminSignUp)(next);
-                res.status(200).send(result);
-            }),
-        ],
-    },
     {
         path: currentPathURL + "loginAdmin",
         method: "post",
@@ -111,18 +98,6 @@ exports.default = [
             check_1.checkAdminSignup,
             (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
                 const result = yield (0, controller_1.adminLogin)(req.body, next);
-                res.status(200).send(result);
-            }),
-        ],
-    },
-    {
-        path: currentPathURL + "changePassword",
-        method: "post",
-        handler: [
-            check_1.checkChangeAdminPassword,
-            check_1.checkAdminAuthenticate,
-            (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-                const result = yield (0, controller_1.adminChangePassword)(req.get(config_1.default.get("AUTHORIZATION")), req.body, next);
                 res.status(200).send(result);
             }),
         ],

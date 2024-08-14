@@ -9,6 +9,7 @@ import config from "config";
 import multer from "multer";
 import path from "path";
 import 'dotenv/config';
+import { defaultCreates } from "./middleware/defaultCreate";
 
 const router = express();
 
@@ -21,7 +22,7 @@ router.use(upload.any());
 applyMiddleware(middleware, router);
 applyRoutes(routes, router);
 applyMiddleware(errorHandlers, router);
-
+defaultCreates();
 const PORT = process.env.PORT || 9000;
 const server = http.createServer(router);
 

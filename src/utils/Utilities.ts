@@ -5,7 +5,6 @@ import * as nodemailer from "nodemailer";
 import { userModel } from "../db/User";
 import { HTTP400Error, HTTP404Error, HTTP403Error } from "./httpErrors";
 import { invalidTokenError } from "./ErrorHandler";
-import { adminModel } from "../db/Admin";
 
 export class Utilities {
 
@@ -107,7 +106,7 @@ export class Utilities {
           if (error) {
             return reject(error);
           } else {
-            let adminRes: any = await adminModel.findOne({ accessToken: token });
+            let adminRes: any = await userModel.findOne({ accessToken: token });
             if (adminRes) {
               return resolve(result);
             } else {
@@ -128,9 +127,8 @@ export class Utilities {
           if (error) {
             return reject(error);
           } else {
-            let adminRes: any = await adminModel.findOne({ accessToken: token });
             let userRes: any = await userModel.findOne({ accessToken: token });
-            if (adminRes || userRes) {
+            if (userRes) {
               return resolve(result);
             } else {
               return reject({ message: "Invalid Token" });

@@ -29,7 +29,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.userModel = void 0;
 const moment_1 = __importDefault(require("moment"));
 const mongoose = __importStar(require("mongoose"));
-var gender = ['other', 'male', 'female', ''];
+const constants_1 = require("../constants");
 const userSchema = new mongoose.Schema({
     firstName: {
         type: String,
@@ -61,7 +61,7 @@ const userSchema = new mongoose.Schema({
     gender: {
         type: String,
         default: '',
-        enum: gender
+        enum: constants_1.GENDERS
     },
     password: {
         type: String,
@@ -69,7 +69,8 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        default: "User",
+        default: "user",
+        enum: constants_1.USER_ROLES
     },
     otp: {
         type: String,

@@ -41,7 +41,6 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = __importDefault(require("config"));
 const bcrypt = __importStar(require("bcrypt"));
 const User_1 = require("../db/User");
-const Admin_1 = require("../db/Admin");
 class Utilities {
     /**
      * Return response in custom format
@@ -172,7 +171,7 @@ Utilities.verifyAdminToken = (token) => __awaiter(void 0, void 0, void 0, functi
                     return reject(error);
                 }
                 else {
-                    let adminRes = yield Admin_1.adminModel.findOne({ accessToken: token });
+                    let adminRes = yield User_1.userModel.findOne({ accessToken: token });
                     if (adminRes) {
                         return resolve(result);
                     }
@@ -192,9 +191,8 @@ Utilities.commonVerifyToken = (token) => __awaiter(void 0, void 0, void 0, funct
                     return reject(error);
                 }
                 else {
-                    let adminRes = yield Admin_1.adminModel.findOne({ accessToken: token });
                     let userRes = yield User_1.userModel.findOne({ accessToken: token });
-                    if (adminRes || userRes) {
+                    if (userRes) {
                         return resolve(result);
                     }
                     else {

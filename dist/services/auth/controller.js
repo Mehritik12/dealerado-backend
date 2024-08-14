@@ -35,7 +35,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refreshToken = exports.fileUpload = exports.adminChangePassword = exports.adminLogin = exports.adminSignUp = exports.createClientAccount = exports.socialLogin = exports.resendOTP = exports.userActiveStatus = exports.verifyLogin = exports.userLogin = void 0;
+exports.refreshToken = exports.fileUpload = exports.adminLogin = exports.createSuperAdminUser = exports.createClientAccount = exports.socialLogin = exports.resendOTP = exports.userActiveStatus = exports.verifyLogin = exports.userLogin = void 0;
 const httpErrors_1 = require("../../utils/httpErrors");
 const config_1 = __importDefault(require("config"));
 const User_1 = require("../../db/User");
@@ -44,15 +44,14 @@ var mongoose = require("mongoose");
 const bcrypt = __importStar(require("bcrypt"));
 const moment_1 = __importDefault(require("moment"));
 const { v4: uuidv4 } = require("uuid");
-const Admin_1 = require("../../db/Admin");
 const FileUploadUtilities_1 = require("../../utils/FileUploadUtilities");
 const admin = require("firebase-admin");
 const saltRound = 10;
 const Banner_1 = require("../../db/Banner");
-admin.initializeApp({
-    credential: admin.credential.cert(config_1.default.get("USER.FIREBASE.CREDENTIALS")),
-    databaseURL: config_1.default.get("USER.FIREBASE.DATABASE"),
-});
+// admin.initializeApp({
+//   credential: admin.credential.cert(config.get("USER.FIREBASE.CREDENTIALS")),
+//   databaseURL: config.get("USER.FIREBASE.DATABASE"),
+// });
 //  common api for login and ragister
 const userLogin = (bodyData, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -323,43 +322,38 @@ const createClientAccount = (req, next) => __awaiter(void 0, void 0, void 0, fun
 exports.createClientAccount = createClientAccount;
 //*****************admin controller************************************************************************************************************
 //************************************************************************************************************************************************
-const adminSignUp = (next) => __awaiter(void 0, void 0, void 0, function* () {
+const createSuperAdminUser = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const adminData = {
             email: "admin@admin.com",
             password: "Qwarty@123",
+            role: "sadmin",
+            gender: "male"
         };
-        const admin = yield Admin_1.adminModel.find({});
-        if (admin.length == 1) {
-            throw new httpErrors_1.HTTP400Error(Utilities_1.Utilities.sendResponsData({
-                code: 400,
-                message: config_1.default.get("ERRORS.ADMIN.ALREADY_EXIST"),
-            }));
+        const admin = yield User_1.userModel.find({ role: "sadmin" });
+        if (!admin.length) {
+            adminData.isProfileUpdate = true;
+            adminData.image =
+                "https://sipl.ind.in/wp-content/uploads/2022/07/dummy-user.png";
+            adminData.firstName = "admin";
+            adminData.userType = "admin";
+            adminData.email = adminData.email;
+            const pass = yield bcrypt.hash(adminData.password, saltRound);
+            adminData.password = pass;
+            yield User_1.userModel.create(adminData);
+            console.log('super admin created.');
         }
-        adminData.isProfileUpdate = true;
-        adminData.image =
-            "https://sipl.ind.in/wp-content/uploads/2022/07/dummy-user.png";
-        adminData.firstName = "admin";
-        adminData.userType = "admin";
-        adminData.email = adminData.email;
-        const pass = yield bcrypt.hash(adminData.password, saltRound);
-        adminData.password = pass;
-        const adminRes = yield Admin_1.adminModel.create(adminData);
-        return Utilities_1.Utilities.sendResponsData({
-            code: 200,
-            message: config_1.default.get("ERRORS.ADMIN.RAGISTER"),
-        });
     }
     catch (error) {
-        next(error);
+        console.log(`Super Admin Create Error: ${error}`);
     }
 });
-exports.adminSignUp = adminSignUp;
+exports.createSuperAdminUser = createSuperAdminUser;
 const adminLogin = (bodyData, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = bodyData;
-        const admin = yield Admin_1.adminModel.findOne({
-            userType: "admin",
+        let admin = yield User_1.userModel.findOne({
+            role: { $in: ['sadmin', 'admin'] },
             isDeleted: false,
             email: email,
         });
@@ -380,16 +374,15 @@ const adminLogin = (bodyData, next) => __awaiter(void 0, void 0, void 0, functio
             id: admin._id,
             email: admin.email,
             name: admin.firstName || "",
-            role: admin.userType,
+            role: admin.role,
         });
         admin.accessToken = adminToken;
         yield admin.save();
-        const userData = Object.assign({}, admin);
-        const result = userData;
+        const result = JSON.parse(JSON.stringify(admin));
         return Utilities_1.Utilities.sendResponsData({
             code: 200,
             message: config_1.default.get("ERRORS.COMMON_ERRORS.LOGIN_SUCCESS"),
-            data: result,
+            data: Object.assign(Object.assign({}, result), { accessToken: adminToken })
         });
     }
     catch (error) {
@@ -397,51 +390,12 @@ const adminLogin = (bodyData, next) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 exports.adminLogin = adminLogin;
-const adminChangePassword = (token, bodyData, next) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { oldPassword, newPassword } = bodyData;
-        const decoded = yield Utilities_1.Utilities.getDecoded(token);
-        let adminRes = yield Admin_1.adminModel.findOne({
-            _id: mongoose.Types.ObjectId(decoded.id),
-            isDeleted: false,
-        });
-        if (adminRes) {
-            const match = yield Utilities_1.Utilities.VerifyPassword(oldPassword, adminRes.password);
-            if (match) {
-                let hashedPassword = yield Utilities_1.Utilities.cryptPassword(newPassword);
-                adminRes.password = hashedPassword;
-                adminRes.save();
-                return Utilities_1.Utilities.sendResponsData({
-                    code: 200,
-                    message: "Password updated successfully",
-                });
-            }
-            else {
-                throw new httpErrors_1.HTTP400Error(Utilities_1.Utilities.sendResponsData({
-                    code: 400,
-                    message: config_1.default.get("ERRORS.ADMIN.INVALID_PASSWORD"),
-                }));
-            }
-        }
-        else {
-            throw new httpErrors_1.HTTP400Error(Utilities_1.Utilities.sendResponsData({
-                code: 400,
-                message: config_1.default.get("ERRORS.COMMON_ERRORS.USER_NOT_EXIST"),
-            }));
-        }
-    }
-    catch (error) {
-        next(error);
-    }
-});
-exports.adminChangePassword = adminChangePassword;
 const fileUpload = (token, req, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const decoded = yield Utilities_1.Utilities.getDecoded(token);
         let userRes = yield User_1.userModel.findOne({ _id: mongoose.Types.ObjectId(decoded.id), isDeleted: false });
-        let adminRes = yield Admin_1.adminModel.findOne({ _id: mongoose.Types.ObjectId(decoded.id), isDeleted: false });
         let bannerRes = yield Banner_1.bannerModel.findOne({ _id: mongoose.Types.ObjectId(decoded.id), isDeleted: false });
-        if (userRes || adminRes || bannerRes) {
+        if (userRes || bannerRes) {
             let bodyData = JSON.parse(JSON.stringify(req.body));
             const fileArr = [];
             for (const file of req.files) {
@@ -471,7 +425,6 @@ const refreshToken = (token, next) => __awaiter(void 0, void 0, void 0, function
         const decoded = yield Utilities_1.Utilities.getDecoded(token);
         if (decoded) {
             let userRes = yield User_1.userModel.findOne({ _id: mongoose.Types.ObjectId(decoded === null || decoded === void 0 ? void 0 : decoded.id), isDeleted: false });
-            let updatedRes;
             if (userRes) {
                 let res = userRes;
                 let refreshToken = yield Utilities_1.Utilities.createJWTToken({
