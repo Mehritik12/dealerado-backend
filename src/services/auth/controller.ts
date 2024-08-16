@@ -5,7 +5,7 @@ import {
   HTTP403Error,
 } from "../../utils/httpErrors";
 import config from "config";
-import { userModel } from "../../db/User";
+import { userModel } from "../../models/User";
 import { Utilities } from "../../utils/Utilities";
 var mongoose = require("mongoose");
 import * as bcrypt from "bcrypt";
@@ -16,7 +16,7 @@ import { FileUpload } from "../../utils/FileUploadUtilities";
 const admin = require("firebase-admin");
 const saltRound = 10;
 import ejs from "ejs";
-import { bannerModel } from "../../db/Banner";
+import { bannerModel } from "../../models/Banner";
 
 
 // admin.initializeApp({

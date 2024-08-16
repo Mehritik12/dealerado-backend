@@ -6,7 +6,7 @@ import {
 import { Utilities } from "../../utils/Utilities";
 import config from "config";
 import { FileUpload } from "../../utils/FileUploadUtilities";
-import { userModel } from "../../db/User";
+import { userModel } from "../../models/User";
 import { ADMIN_ROLES, SUPER_ADMIN } from "../../constants";
 var mongoose = require("mongoose");
 

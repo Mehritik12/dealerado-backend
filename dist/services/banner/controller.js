@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateBanner = exports.deleteBanner = exports.getBannerDetails = exports.getBanners = exports.addBanner = void 0;
-const Banner_1 = require("../../db/Banner");
+const Banner_1 = require("../../models/Banner");
 const httpErrors_1 = require("../../utils/httpErrors");
 const Utilities_1 = require("../../utils/Utilities");
 const FileUploadUtilities_1 = require("../../utils/FileUploadUtilities");

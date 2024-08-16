@@ -40,7 +40,7 @@ exports.Utilities = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = __importDefault(require("config"));
 const bcrypt = __importStar(require("bcrypt"));
-const User_1 = require("../db/User");
+const User_1 = require("../models/User");
 class Utilities {
     /**
      * Return response in custom format

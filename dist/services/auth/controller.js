@@ -38,7 +38,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.refreshToken = exports.fileUpload = exports.adminLogin = exports.createSuperAdminUser = exports.createClientAccount = exports.socialLogin = exports.resendOTP = exports.userActiveStatus = exports.verifyLogin = exports.userLogin = void 0;
 const httpErrors_1 = require("../../utils/httpErrors");
 const config_1 = __importDefault(require("config"));
-const User_1 = require("../../db/User");
+const User_1 = require("../../models/User");
 const Utilities_1 = require("../../utils/Utilities");
 var mongoose = require("mongoose");
 const bcrypt = __importStar(require("bcrypt"));
@@ -47,7 +47,7 @@ const { v4: uuidv4 } = require("uuid");
 const FileUploadUtilities_1 = require("../../utils/FileUploadUtilities");
 const admin = require("firebase-admin");
 const saltRound = 10;
-const Banner_1 = require("../../db/Banner");
+const Banner_1 = require("../../models/Banner");
 // admin.initializeApp({
 //   credential: admin.credential.cert(config.get("USER.FIREBASE.CREDENTIALS")),
 //   databaseURL: config.get("USER.FIREBASE.DATABASE"),

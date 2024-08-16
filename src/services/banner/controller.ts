@@ -1,5 +1,5 @@
 
-import { bannerModel } from "../../db/Banner";
+import { bannerModel } from "../../models/Banner";
 
 import {
   HTTP400Error,

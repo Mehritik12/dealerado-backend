@@ -17,7 +17,7 @@ const httpErrors_1 = require("../../utils/httpErrors");
 const Utilities_1 = require("../../utils/Utilities");
 const config_1 = __importDefault(require("config"));
 const FileUploadUtilities_1 = require("../../utils/FileUploadUtilities");
-const User_1 = require("../../db/User");
+const User_1 = require("../../models/User");
 const constants_1 = require("../../constants");
 var mongoose = require("mongoose");
 const addUser = (token, req, next) => __awaiter(void 0, void 0, void 0, function* () {
