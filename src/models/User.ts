@@ -24,10 +24,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
-  dob: {
-    type: String,
-    default: ""
-  },
   gender: {
     type: String,
     default: '',
@@ -116,7 +112,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  businessName:{
+  dealershipName:{
     type: String,
     default: ""
   },
@@ -128,6 +124,10 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: moment().add(5, 'm')
   },
+  isKyc:{
+    type: String,
+    default: false
+  }
 },
 { timestamps: true });
 

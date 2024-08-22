@@ -1,4 +1,4 @@
-export const USER_ROLES = ['sadmin', 'admin', 'subadmin', 'user'];
+export const USER_ROLES = ['sadmin', 'admin', 'user'];
 
 export const GENDERS = ['other', 'male', 'female'];
 

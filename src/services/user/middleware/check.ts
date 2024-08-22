@@ -9,12 +9,15 @@ export const validate = (req: Request, res: Response, next: NextFunction) => {
     name: Joi.string().trim(true).required().messages({
       "string.empty": "Name can not be empty",
     }),
-    image: Joi.string().trim(true).messages({
-      "string.empty": "Image can not be empty",
+    email: Joi.string().trim(true).email().required().messages({
+      "string.empty": "Email can not be empty",
     }),
-    type: Joi.required().messages({
-      "string.empty": "Image can not be empty",
-    }),
+    mobileNumber: Joi.string().trim(true).optional(),
+    dealershipName: Joi.string().trim(true).optional(),
+    isKyc: Joi.boolean().optional(),
+    role:Joi.string().trim(true).optional(),
+    image: Joi.string().trim(true).optional(),
+    password: Joi.string().trim(true).optional()
   });
   const { error, value } = schema.validate(req.body, {
     abortEarly: false,

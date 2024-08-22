@@ -7,21 +7,72 @@ import { ADMIN_ROLES, SUPER_ADMIN } from "../../constants";
 var mongoose = require("mongoose");
 var bcrypt = require('bcryptjs');
 
-export const getUsers = async (token: any, body: any, next: any) => {
+export const addUser = async (token: any, req: any, next: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
-    let skip = body.skip || 0;
-    let limit = body.limit || 10;
+    let bodyData: any;
+    bodyData = req.body;
 
-    let search = body.search;
+    const isMobileExist = await userModel.findOne({
+      mobileNumber: bodyData.mobileNumber || "",
+      isDeleted: false
+    });
+    
+    if (isMobileExist) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.USER_ERRORS.MOBILE_EXIST"),
+        })
+      );
+    }
+
+    const isEmailExist = await userModel.findOne({
+      email: bodyData.email || "",
+      isDeleted: false,
+    });
+
+    if (isEmailExist) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.USER_ERRORS.EMAIL_EXIST"),
+        })
+      );
+    }
+    bodyData.createdBy = decoded.id;
+    bodyData.updatedBy = decoded.id;
+    let result = await userModel.create(bodyData);
+    return Utilities.sendResponsData({
+      code: 200,
+      message: config.get("ERRORS.USER_ERRORS.CREATE"),
+      data: result,
+    });
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getUsers = async (token: any, queryData: any, next: any) => {
+  try {
+    const decoded: any = await Utilities.getDecoded(token);
+    const page: number = parseInt(queryData.page) || 1;
+    const limit: number = parseInt(queryData.limit) || 10;
+    const role = queryData.role || 'user';
+
+    const skip: number = (page - 1) * limit;
+
+
+    let search = queryData.search;
     let query: any = {
       isDeleted: false,
-      role: "user",
+      role: role,
     };
     if (search) {
       query["$or"] = [
-        { firstName: new RegExp(search, "i") },
-        { lastName: new RegExp(search, "i") },
+        { name: new RegExp(search, "i") },
+        { email: new RegExp(search, "i") },
         { mobileNumber: new RegExp(search, "i") },
       ];
     }
@@ -29,15 +80,15 @@ export const getUsers = async (token: any, body: any, next: any) => {
     let result = await userModel
       .find(query)
       .sort({ createdAt: -1 })
-      .skip(parseInt(skip))
-      .limit(parseInt(limit));
+      .skip(skip)
+      .limit(limit);
 
-    return {
-      responseCode: 200,
-      responseMessage: "success",
+    return Utilities.sendResponsData({
+      code: 200,
+      message: config.get("ERRORS.USER_ERRORS.FETCH"),
       data: result,
-      totalRecord: totalRecords,
-    };
+      totalRecord:totalRecords
+    });
   } catch (error) {
     next(error);
   }
@@ -83,6 +134,7 @@ export const getUserDetails = async (token: any, next: any) => {
   }
 };
 
+// update profile by user
 export const updateUser = async (token: any, req: any, next: any) => {
   try {
     const bodyData = req.body;
@@ -116,7 +168,8 @@ export const updateUser = async (token: any, req: any, next: any) => {
       );
     }
 
-    const isMobileExist = await userModel.findOne({_id: { $ne: new mongoose.Types.ObjectId(decoded.id) },
+    const isMobileExist = await userModel.findOne({
+      _id: { $ne: new mongoose.Types.ObjectId(decoded.id) },
       mobileNumber: bodyData.mobileNumber,
     });
 
@@ -143,7 +196,7 @@ export const updateUser = async (token: any, req: any, next: any) => {
       );
     }
 
-    userData.businessName = bodyData.businessName || userData.businessName;
+    userData.dealershipName = bodyData.businessName || userData.dealershipName;
     userData.email = bodyData.email || userData.email;
     userData.mobileNumber = bodyData.mobileNumber || userData.mobileNumber;
     userData.name = bodyData.name || userData.name;
@@ -212,6 +265,93 @@ export const changePassword = async (token: any, bodyData: any, next: any) => {
         })
       );
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const userProfileUpdateByAdmin = async (token: any, userId: any, req: any, next: any) => {
+  try {
+    const bodyData = req.body;
+    const decoded: any = await Utilities.getDecoded(token);
+    if (!decoded) {
+      Utilities.sendResponsData({
+        code: 400,
+        message: config.get("ERRORS.TOKEN_REQUIRED"),
+      });
+    }
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.INVALID_ID"),
+        })
+      );
+    }
+
+    let userData = await userModel.findOne({ _id: userId, isDeleted: false, });
+
+    if (!userData) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.NO_RECORD_FOUND"),
+        })
+      );
+    }
+
+    const isMobileExist = await userModel.findOne({
+      _id: { $ne: new mongoose.Types.ObjectId(userId) },
+      mobileNumber: bodyData.mobileNumber || "",
+    });
+
+    if (isMobileExist) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.USER_ERRORS.MOBILE_EXIST"),
+        })
+      );
+    }
+
+    const isEmailExist = await userModel.findOne({
+      _id: { $ne: new mongoose.Types.ObjectId(userId) },
+      email: bodyData.email || "",
+    });
+
+    if (isEmailExist) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.USER_ERRORS.EMAIL_EXIST"),
+        })
+      );
+    }
+
+    userData.dealershipName = bodyData.businessName || userData.dealershipName;
+    userData.email = bodyData.email || userData.email;
+    userData.mobileNumber = bodyData.mobileNumber || userData.mobileNumber;
+    userData.name = bodyData.name || userData.name;
+    userData.profilePicture = bodyData.profilePicture || userData.profilePicture;
+    userData.isKyc= bodyData.isKyc || userData.isKyc
+    userData.updatedBy = decoded.id || userData.updatedBy;
+    // if (req.files) {
+    //   const file = req.files;
+    //   const uploadedFile: any = await FileUpload.uploadFileToAWS(
+    //     file,
+    //     req.body.type || "profile",
+    //     null
+    //   );
+    //   console.log(uploadedFile)
+    //   userData.profilePicture = uploadedFile.Location;
+    // }
+
+    await userData.save();
+
+    return Utilities.sendResponsData({
+      code: 200,
+      message: config.get("ERRORS.USER_ERRORS.UPDATE")
+    });
   } catch (error) {
     next(error);
   }

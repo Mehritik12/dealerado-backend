@@ -85,7 +85,7 @@ export const register = async (bodyData: any, next: any) => {
 export const userLogin = async (bodyData: any, next: any) => {
   try {
     const { email, password } = bodyData;
-    const user: any = await userModel.findOne({ $or: [{ email: email.trim() }, { mobileNumber: email.trim() }], otpVerified: true, isDeleted: false, role: { $eq: "user" } });
+    const user: any = await userModel.findOne({ $or: [{ email: email}, { mobileNumber: email}], otpVerified: true, isDeleted: false, role: { $eq: "user" } });
     if (!user) {
       throw new HTTP400Error(
         Utilities.sendResponsData({
@@ -257,8 +257,7 @@ export const createSuperAdminUser = async () => {
     const admin = await userModel.find({ role: "sadmin" });
     if (!admin.length) {
       adminData.isProfileUpdate = true;
-      adminData.image =
-        "https://sipl.ind.in/wp-content/uploads/2022/07/dummy-user.png";
+      adminData.image =""
       adminData.firstName = "admin";
       adminData.userType = "admin";
       adminData.email = adminData.email;
