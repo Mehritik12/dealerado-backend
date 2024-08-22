@@ -24,271 +24,218 @@ import { bannerModel } from "../../models/Banner";
 //   databaseURL: config.get("USER.FIREBASE.DATABASE"),
 // });
 
-//  common api for login and ragister
-export const userLogin = async (bodyData: any, next: any) => {
+//******************************CLIENT**************************************
+//*************************************************************************
+export const register = async (bodyData: any, next: any) => {
   try {
-    const { mobileNumber } = bodyData;
-    const user = await userModel.findOne({
-      mobileNumber: bodyData.mobileNumber,
-      isDeleted: false,
-    });
-    // const otp = Math.floor(100000 + Math.random() * 900000);
-    const otp = "2345";
+    const { email } = bodyData;
+    const query = [
+      { isDeleted: false },
+      { otpVerified: true },
+      { $or: [{ email: email }, { mobileNumber: email }] }
+    ]
+    const user = await userModel.findOne({ $and: query });
     if (user) {
-      user.otp = otp;
-      user.fcmToken = bodyData.fcmToken;
-      await user.save();
-      return Utilities.sendResponsData({
-        code: 200,
-        message: config.get("ERRORS.COMMON_ERRORS.SEND_OTP_MOBILE"),
-      });
-    } else {
-      bodyData.otp = otp;
-      const userRes = await userModel.create(bodyData);
-      return Utilities.sendResponsData({
-        code: 200,
-        message: config.get("ERRORS.COMMON_ERRORS.SEND_OTP_MOBILE"),
-      });
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.USER_ERRORS.USER_EXISTS"),
+        })
+      );
     }
+
+    let randomOTP = Utilities.genNumericCode(6);
+
+    let userObj: any = {
+
+      name: bodyData.name,
+      email: bodyData.email,
+      otp: "123456",
+      otpVerified: true,
+      otpExipredAt: moment().add(1, "m"),
+    };
+
+    const pass: string = await bcrypt.hash(bodyData.password, saltRound);
+    userObj.password = pass;
+
+    // Get email template to send email
+    // let messageHtml = await ejs.renderFile(
+    //   process.cwd() + "/src/views/otpEmail.ejs",
+    //   { otp: randomOTP },
+    //   { async: true }
+    // );
+    // let mailResponse = MailerUtilities.sendSendgridMail({
+    //   recipient_email: [bodyData.email],
+    //   subject: "OTP Verification",
+    //   text: messageHtml,
+    // });
+
+    //await new userModel(req).save();
+    await new userModel(userObj).save();
+    return Utilities.sendResponsData({
+      code: 200,
+      message: "User Ragister successfully",
+      data: {},
+    });
   } catch (error) {
     next(error);
   }
 };
 
-export const verifyLogin = async (bodyData: any, next: any) => {
+export const userLogin = async (bodyData: any, next: any) => {
   try {
-    const { mobileNumber, otp } = bodyData;
-    const user = await userModel.findOne({ mobileNumber: mobileNumber });
-    if (user) {
-      if (user?.otp != otp) {
-        throw new HTTP400Error(
-          Utilities.sendResponsData({
-            code: 400,
-            message: config.get("ERRORS.COMMON_ERRORS.INVALID_OTP"),
-          })
-        );
-      }
-      const userToken = await Utilities.createJWTToken({
-        id: user?._id,
-        email: user.email ? user.email : "",
-        mobile: user.mobileNumber,
-        role: user.role,
-        name: user.firstName ? user.firstName : "",
-      });
-      user.accessToken = userToken;
-      user.otpVerified = true;
-      if (user.isProfileUpdate == true) {
-        user.isLogIn = true;
-      }
-      const res = await user.save();
-      let resObj = { ...res };
-
-      return Utilities.sendResponsData({
-        code: 200,
-        message:
-          user.isProfileUpdate == true
-            ? config.get("ERRORS.COMMON_ERRORS.LOGIN_SUCCESS")
-            : config.get("ERRORS.COMMON_ERRORS.VERIFY_SUCCESS"),
-        data: resObj,
-      });
-    } else {
-      throw new HTTP400Error(
-        Utilities.sendResponsData({
-          code: 400,
-          message: config.get("ERRORS.NO_RECORD_FOUND"),
-        })
-      );
-    }
-  } catch (err) {
-    next(err);
-  }
-};
-
-export const userActiveStatus = async (token: any, id: any, bodyData: any, next: any) => {
-  try {
-    const decoded: any = await Utilities.getDecoded(token);
-    const { status } = bodyData;
-    if (mongoose.Types.ObjectId.isValid(id)) {
-      const userRes = await userModel.findOne({ _id: id });
-      if (!userRes) {
-        throw new HTTP400Error(
-          Utilities.sendResponsData({ code: 400, message: config.get('ERRORS.NO_RECORD_FOUND') })
-        );
-      }
-      userRes.isActive = status
-      await userRes.save();
-
-      return Utilities.sendResponsData({
-        code: 200,
-        message: config.get("ERRORS.COMMON_ERRORS.SUCCESS"),
-        data: userRes
-      });
-    }
-    else {
-      throw new HTTP400Error(
-        Utilities.sendResponsData({ code: 400, message: config.get('ERRORS.INVALID_ID') })
-      );
-    }
-  }
-  catch (error) {
-    next(error);
-  }
-};
-
-export const resendOTP = async (req: any, next: any) => {
-  try {
-    const { mobileNumber } = req;
-    const user = await userModel.findOne({
-      mobileNumber: mobileNumber,
-      isDeleted: false,
-    });
-    const randomOTP = "2345";
+    const { email, password } = bodyData;
+    const user: any = await userModel.findOne({ $or: [{ email: email.trim() }, { mobileNumber: email.trim() }], otpVerified: true, isDeleted: false, role: { $eq: "user" } });
     if (!user) {
       throw new HTTP400Error(
         Utilities.sendResponsData({
           code: 400,
-          message: config.get("ERRORS.COMMON_ERRORS.USER_NOT_EXIST"),
+          message: config.get("ERRORS.USER_ERRORS.USER_NOT_EXIST"),
         })
       );
-    } else if (user) {
-      user.otp = randomOTP;
-      user.otpVerified = false;
-      await user.save();
-      return Utilities.sendResponsData({
-        code: 200,
-        message: config.get("ERRORS.COMMON_ERRORS.SEND_OTP_MOBILE"),
-        data: { mobile: user.mobileNumber, otp: user.otp },
-      });
     }
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.USER_ERRORS.INVALID_PASSWORD"),
+        })
+      );
+    }
+    let userToken = await Utilities.createJWTToken({
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      role: user.role
+    });
+    user.accessToken = userToken;
+    await user.save(user);
+
+    user.token = userToken;
+
+    const userData = { ...user };
+    const result = userData?._doc;
+    delete result.password;
+    return Utilities.sendResponsData({
+      code: 200,
+      message: "Success",
+      data: result,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-export const socialLogin = async (req: any, next: any) => {
+// Forgot Password send link to the user email
+export const forgotPassword = async (bodyData: any, next: any) => {
   try {
-    var firstTimeLogin = false;
-    var name;
+    let userRes: any = await userModel.findOne({ email: bodyData.email, isDeleted: false });
 
-    function doSomething() {
-      return admin
-        .app()
-        .auth()
-        .verifyIdToken(req.body.firebase_token)
-        .then(async function (decodedToken: any) {
-          return decodedToken.uid;
-        });
-    }
-    let uid = await doSomething();
-    function doSomething1() {
-      return admin
-        .app()
-        .auth()
-        .getUser(uid)
-        .then(async function (userRecord: any) {
-          return userRecord;
-        });
-    }
+    if (userRes) {
+      const activateToken = await Utilities.generateActivationToken();
+      userRes.activationToken = activateToken
+      userRes.isActive = false;
+      userRes.otpVerified = false;
+      await userRes.save();
 
-    async function doSomething2() {
-      let userRecord = await doSomething1();
-      name = userRecord?.displayName;
-      let finalResult: any;
-      var userInfo = {};
-      userInfo = userInfo || {};
-      var criteria = {};
-      if (req.body.socialType == "google") {
-        criteria = {
-          "socialMediaLinks.google.id": userRecord?.uid,
-          isDeleted: false,
-        };
-      }
+      const SITE_URL = config.get("SITE_URL");
 
-      let userRes = await userModel.findOne(criteria);
-      if (!userRes) {
-        let user: any = {
-          name: userRecord?.displayName,
-          photo: userRecord?.photoURL,
-          socialMediaLinks: {
-            [req?.body?.social_type]: {
-              id: userRecord?.uid,
-              profilePic: userRecord?.photoURL,
-              displayName: userRecord?.displayName,
-              email: userRecord?.email,
-            },
-          },
-          email: userRecord?.email,
-          tokenKey: uuidv4() + moment().unix(),
-          uid: userRecord?.uid,
-        };
-        finalResult = await userModel.create(user);
-        firstTimeLogin = true;
-      } else {
-        userRes.email = userRecord?.email;
-        // userRes.tokenKey = uuidv4() + moment().unix();
-        finalResult = await userRes.save();
-        firstTimeLogin = false;
-      }
-      const token = await Utilities.getUserToken(finalResult);
-      finalResult.accessToken = token;
-      finalResult.firstTimeLogin = false;
-      return finalResult;
-    }
-    let res = await doSomething2();
-    let obj = {
-      name: res?.name,
-      accessToken: res?.accessToken,
-      firstTimeLogin: firstTimeLogin,
-      photo: res?.socialMediaLinks.google.profilePic,
-      id: res?._id,
-      createdAt: res?.createdAt,
-      updatedAt: res?.updatedAt,
-    };
-    return { responseCode: 200, responseMessage: "Success", data: obj };
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const createClientAccount = async (req: any, next: any) => {
-  try {
-    const reqData = req;
-    const { email, mobileNumber } = reqData;
-    const user = await userModel.findOne({ mobileNumber: mobileNumber, isDeleted: false });
-    if (user) {
-      let obj: any = {
-        firstName: req.firstName || "",
-        lastName: req.lastName || "",
-        email: req.email || "",
-        mobileNumber: req.mobileNumber || "",
-        dob: req.dob && req.dob,
-        gender: req.gender || '',
-        isLogIn: true,
-        isProfileUpdate: true,
-        profilePicture: req.profilePicture || ''
-      }
-      const token = await Utilities.createJWTToken({
-        id: user?._id,
-        email: user.email ? user.email : "",
-        mobileNumber: user.mobileNumber,
-        role: user.role,
-      });
-      obj["accessToken"] = token;
-      let doc = await userModel.updateOne(
-        { mobileNumber: mobileNumber, isDeleted: false },
-        obj
+      let messageHtml = await ejs.renderFile(
+        process.cwd() + '/src/views/verifyLink.ejs',
+        { name: bodyData.email, link: `${SITE_URL}/newPassword/${activateToken}` },
+        { async: true }
       );
 
-      return Utilities.sendResponsData({
-        code: 200,
-        message: config.get("ERRORS.COMMON_ERRORS.SUCCESS"),
-        data: obj,
+      let mailResponse: any = await MailerUtilities.sendSendgridMail({
+        recipient_email: [bodyData.email],
+        subject: 'Activation Link',
+        text: messageHtml,
       });
+      if (mailResponse && mailResponse.message == 'success') {
+        return Utilities.sendResponsData({
+          code: 200,
+          message: config.get("ERRORS.USER_ERRORS.LINK_SENT"),
+          data: {},
+        });
+      }
     } else {
       throw new HTTP400Error(
         Utilities.sendResponsData({
-          code: 404,
-          message: config.get("ERRORS.COMMON_ERRORS.USER_NOT_EXIST"),
+          code: 400,
+          message: config.get("ERRORS.USER_ERRORS.USER_NOT_EXIST"),
+        })
+      );
+    }
+  } catch (e) {
+    next(e);
+  }
+};
+
+// get Token & navigate to the new password page
+export const activateLink = async (req: any, res: any, next: any) => {
+  const { activationToken } = req.query;
+  try {
+    const user = await userModel.findOne({ activationToken: activationToken });
+
+    if (!user) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.USER_ERRORS.LINK_EXPIRED"),
+        })
+      );
+    }
+
+    if (user.isActive) {
+      return Utilities.sendResponsData({
+        code: 401,
+        message: config.get("ERRORS.COMMON_ERRORS.ACC_ALREADY_VERIFIED"),
+      });
+    }
+
+    user.isActive = true;
+    user.otpVerified = true;
+    user.activationToken = undefined;
+    await user.save();
+    return Utilities.sendResponsData({
+      code: 200,
+      message: config.get("ERRORS.COMMON_ERRORS.ACCOUNT_VERIFIED"),
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+// New password update after rest
+export const updateNewPassword = async (bodyData: any, next: any) => {
+  try {
+    const userRes: any = await userModel.findOne({ activationToken: bodyData.activationToken });
+    if (userRes) {
+      let hashedPassword = await Utilities.cryptPassword(bodyData.password);
+      userRes.password = hashedPassword;
+      userRes.isActive = true;
+      userRes.otpVerified = true;
+      const savedData = await userRes.save();
+      if (savedData) {
+        return Utilities.sendResponsData({
+          code: 200,
+          message: config.get("ERRORS.USER_ERRORS.PASSWORD_UPDATED"),
+        });
+      } else {
+        throw new HTTP400Error(
+          Utilities.sendResponsData({
+            code: 400,
+            message: config.get("ERRORS.UNKNOWN_ERROR"),
+          })
+        );
+      }
+    } else {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.USER_ERRORS.USER_NOT_EXIST"),
         })
       );
     }
@@ -297,9 +244,9 @@ export const createClientAccount = async (req: any, next: any) => {
   }
 };
 
-//*****************admin controller************************************************************************************************************
-//************************************************************************************************************************************************
-export const createSuperAdminUser = async () => {  
+//******************************ADMIN**************************************
+//*************************************************************************
+export const createSuperAdminUser = async () => {
   try {
     const adminData: any = {
       email: "admin@admin.com",
@@ -307,8 +254,8 @@ export const createSuperAdminUser = async () => {
       role: "sadmin",
       gender: "male"
     };
-    const admin = await userModel.find({role:"sadmin"});
-    if (!admin.length) {      
+    const admin = await userModel.find({ role: "sadmin" });
+    if (!admin.length) {
       adminData.isProfileUpdate = true;
       adminData.image =
         "https://sipl.ind.in/wp-content/uploads/2022/07/dummy-user.png";
@@ -329,7 +276,7 @@ export const adminLogin = async (bodyData: any, next: any) => {
   try {
     const { email, password } = bodyData;
     let admin = await userModel.findOne({
-      role: {$in:['sadmin','admin']},
+      role: { $in: ['sadmin', 'admin'] },
       isDeleted: false,
       email: email,
     });
@@ -353,7 +300,7 @@ export const adminLogin = async (bodyData: any, next: any) => {
     let adminToken = await Utilities.createJWTToken({
       id: admin._id,
       email: admin.email,
-      name: admin.firstName || "",
+      name: admin.name || "",
       role: admin.role,
     });
     admin.accessToken = adminToken;
@@ -362,7 +309,7 @@ export const adminLogin = async (bodyData: any, next: any) => {
     return Utilities.sendResponsData({
       code: 200,
       message: config.get("ERRORS.COMMON_ERRORS.LOGIN_SUCCESS"),
-      data: {...result, accessToken: adminToken}
+      data: { ...result, accessToken: adminToken }
     });
   } catch (error) {
     next(error);
@@ -370,74 +317,3 @@ export const adminLogin = async (bodyData: any, next: any) => {
 };
 
 
-export const fileUpload = async (token: any, req: any, next: any) => {
-  try {
-    const decoded: any = await Utilities.getDecoded(token);
-    let userRes: any = await userModel.findOne({ _id: mongoose.Types.ObjectId(decoded.id), isDeleted: false });
-    let bannerRes: any = await bannerModel.findOne({ _id: mongoose.Types.ObjectId(decoded.id), isDeleted: false });
-    if (userRes || bannerRes) {
-      let bodyData: any = JSON.parse(JSON.stringify(req.body));
-      const fileArr: any = [];
-      for (const file of req.files) {
-        fileArr.push(await FileUpload.uploadFileToAWS(file, bodyData.type, null));
-      }
-      const imagesData :any= [];
-      fileArr.forEach((item: any) => {
-        imagesData.push({
-          "url": item.Location.toString(),
-          "fileName": item.key
-        });
-      });
-
-      return Utilities.sendResponsData({ code: 200, message: config.get('ERRORS.COMMON_ERRORS.SUCCESS_MESSAGE'), data: imagesData });
-    }
-    else {
-      throw new HTTP400Error(
-        Utilities.sendResponsData({ code: 400, message: config.get('ERRORS.USER_ERRORS.USER_NOT_EXIST') })
-      );
-    }
-  }
-  catch (error) {
-    console.log("err", error);
-    throw new HTTP400Error(Utilities.sendResponsData({ code: 400, message: error }));
-  }
-}
-
-export const refreshToken = async (token: any, next: any) => {
-  try {
-
-    const decoded: any = await Utilities.getDecoded(token);
-    if(decoded){
-      let userRes: any = await userModel.findOne({ _id: mongoose.Types.ObjectId(decoded?.id), isDeleted: false });
-      if (userRes) {
-        let res = userRes;
-        let refreshToken = await Utilities.createJWTToken({
-          id: res?._id,
-          email: res.email ? res.email : "",
-          mobile: res.mobile,
-          role: res.role,
-        });
-         if (userRes) {
-          await userModel.updateOne(
-            { _id: mongoose.Types.ObjectId(decoded.id), isDeleted: false },
-            { accessToken: refreshToken }
-          );
-        }
-        return Utilities.sendResponsData({
-          code: 200,
-          message: "Success",
-          data: { accessToken: refreshToken }
-        });
-      } else {
-        Utilities.sendResponsData({
-          code: 400,
-          message: config.get("ERRORS.COMMON_ERRORS.USER_NOT_EXIST"),
-        })
-      }
-    }
-  }
-  catch (error) {
-    console.log("err", error);
-    throw new HTTP400Error(Utilities.sendResponsData({ code: 400, message: error }));
-  }
-}

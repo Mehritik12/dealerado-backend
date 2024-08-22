@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import multer from 'multer';
 import * as AWS from "aws-sdk";
 import config from "config";
+import path from "path";
 
 const options: any = {
   secretAccessKey: config.get("AWS.BUCKET.SECRET"),
@@ -14,7 +15,6 @@ const options: any = {
 const storage = multer.diskStorage({
 
   destination: (req, file, cb) => {
-    console.log('MULTER')
     const path = "temp/";
     fs.mkdirSync(path, { recursive: true });
     return cb(null, path);
@@ -39,7 +39,13 @@ export class FileUpload {
         const s3 = new AWS.S3({
           s3ForcePathStyle: true,
         });
-        // let newName = Date.now() + ".png";
+        const fileExt = path.extname(file.originalname);
+        let newName ;
+        if (file.mimetype.indexOf('image/') > -1) {
+          newName = `${file.originalname}.png`;
+      } else {
+          newName = `${file.originalname}${fileExt}`;
+      }
         let s3Params = {
           ContentType: `${file.mimetype}`,
           Bucket: "dealeradostorage",
@@ -48,7 +54,6 @@ export class FileUpload {
         };
         try {
           let data = s3.upload(s3Params).promise();
-
           resolve(data);
         } catch (err) {
           console.log("erroris", err);

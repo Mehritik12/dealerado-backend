@@ -1,23 +1,38 @@
 import { NextFunction, Request, Response } from "express";
 import {
+  activateLink,
   adminLogin,
-  createClientAccount,
-  fileUpload,
-  refreshToken,
-  resendOTP,
-  socialLogin,
-  userActiveStatus,
+  forgotPassword,
+  // createClientAccount,
+  // fileUpload,
+  // refreshToken,
+  register,
+  updateNewPassword,
+  // resendOTP,
+  // socialLogin,
+  // userActiveStatus,
   userLogin,
-  verifyLogin
+  // verifyLogin
 } from "./controller";
 import config from "config";
-import { checkLogin, checkSignup, checkResendOTP, verifyCheck, checkAuthenticate, checkClientSignup, checkAdminSignup, checkChangeAdminPassword, checkAdminAuthenticate, checkUserStatus, checkCommonAuthentication } from "./middleware/check";
+import { checkLogin, checkSignup,checkAdminSignup,validateLink, checkForgotPassword, checkNewPassword } from "./middleware/check";
 const basePath = config.get("BASE_PATH");
 const currentPath = "auth/";
 
 const currentPathURL = basePath + currentPath;
-console.log(currentPathURL)
+
 export default [
+    {
+    path: currentPathURL + "register",
+    method: "post",
+    handler: [
+      checkSignup,
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await register(req.body, next);
+        res.status(200).send(result);
+      },
+    ],
+  },
   // Login & Ragister 
   {
     path: currentPathURL + "login",
@@ -31,72 +46,58 @@ export default [
     ],
   },
 
+  //@Forgot password//
   {
-    path: currentPathURL + "verifyLogin",
+    path: currentPathURL + "forgotPassword",
     method: "post",
     handler: [
-      verifyCheck,
+      checkForgotPassword,
       async (req: Request, res: Response, next: NextFunction) => {
-        const result = await verifyLogin(req.body, next);
+        const result = await forgotPassword(req.body, next);
         res.status(200).send(result);
       },
     ],
   },
 
-  //  Resend Partner OTP
+  // @activate email //
   {
-    path: currentPathURL + "resendOTP",
+    path: currentPathURL + "activate",
+    method: "get",
+    handler: [
+      validateLink,
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await activateLink(req, res, next);
+        res.status(200).send(result);
+      },
+    ],
+  },
+
+  {
+    path: currentPathURL + "newPassword",
     method: "post",
     handler: [
-      checkResendOTP,
+      checkNewPassword,
       async (req: Request, res: Response, next: NextFunction) => {
-        const result = await resendOTP(req.body, next);
+        const result = await updateNewPassword(req.body,  next);
         res.status(200).send(result);
       },
     ],
   },
 
   // social login for google
-  {
-    path: currentPathURL + "socialLogin",
-    method: "post",
-    handler: [
-      async (req: Request, res: Response, next: NextFunction) => {
-        const result = await socialLogin(req, next);
-        res.status(200).send(result);
-      },
-    ],
-  },
+  // {
+  //   path: currentPathURL + "socialLogin",
+  //   method: "post",
+  //   handler: [
+  //     async (req: Request, res: Response, next: NextFunction) => {
+  //       const result = await socialLogin(req, next);
+  //       res.status(200).send(result);
+  //     },
+  //   ],
+  // },
 
-  {
-    path: currentPathURL + "changeUserStatus" + "/:id",
-    method: "put",
-    handler: [
-      checkAdminAuthenticate,
-      checkUserStatus,
-      async (req: Request, res: Response, next: NextFunction) => {
-        const result = await userActiveStatus(req.get(config.get("AUTHORIZATION")),req.params.id, req.body, next);
-        res.status(200).send(result);
-      },
-    ],
-  },
-
-
-  // create and update client profile
-  {
-    path: currentPathURL + "createClientAccount",
-    method: "post",
-    handler: [
-      checkClientSignup,
-      async (req: Request, res: Response, next: NextFunction) => {
-        const result = await createClientAccount(req.body, next);
-        res.status(200).send(result);
-      },
-    ],
-  },
-
-  // *********************Admin***************************************************************************************
- 
+//******************************ADMIN**************************************
+//*************************************************************************
   {
     path: currentPathURL + "loginAdmin",
     method: "post",
@@ -108,26 +109,16 @@ export default [
       },
     ],
   },
-  {
-    path: currentPathURL + 'fileUpload',
-    method: "post",
-    handler: [
-      checkCommonAuthentication,
-      async (req: Request, res: Response, next: NextFunction) => {
-        const result = await fileUpload(req.get(config.get('AUTHORIZATION')), req, next);
-        res.status(200).send(result);
-      }
-    ]
-  },
-  {
-    path: currentPathURL + 'refreshToken',
-    method: "get",
-    handler: [
-      // checkAuthenticate,
-      async (req: Request, res: Response, next: NextFunction) => {
-        const result = await refreshToken(req.get(config.get('AUTHORIZATION')), next);
-        res.status(200).send(result);
-      }
-    ]
-  },
+
+  // {
+  //   path: currentPathURL + 'refreshToken',
+  //   method: "get",
+  //   handler: [
+  //     // checkAuthenticate,
+  //     async (req: Request, res: Response, next: NextFunction) => {
+  //       const result = await refreshToken(req.get(config.get('AUTHORIZATION')), next);
+  //       res.status(200).send(result);
+  //     }
+  //   ]
+  // },
 ];

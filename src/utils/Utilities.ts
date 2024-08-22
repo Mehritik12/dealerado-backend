@@ -205,4 +205,8 @@ export class Utilities {
     });
   }
 
+  public static generateActivationToken = async () => {
+    return Math.random().toString(36).substring(2);
+  }
+
 }

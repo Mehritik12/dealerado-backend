@@ -3,11 +3,7 @@ import * as mongoose from 'mongoose';
 import { GENDERS, USER_ROLES } from '../constants';
 
 const userSchema = new mongoose.Schema({
-  firstName: {
-    type: String,
-    default: ""
-  },
-  lastName: {
+  name: {
     type: String,
     default: ""
   },
@@ -17,10 +13,12 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
+    trim: true,
+    lowercase: true
   },
   mobileNumber: {
     type: String,
-    default: ""
+    trim: true,
   },
   address: {
     type: String,
@@ -33,7 +31,7 @@ const userSchema = new mongoose.Schema({
   gender: {
     type: String,
     default: '',
-    enum: GENDERS
+    // enum: GENDERS
   },
   password: {
     type: String,
@@ -117,6 +115,18 @@ const userSchema = new mongoose.Schema({
   isActive:{
     type: Boolean,
     default: true
+  },
+  businessName:{
+    type: String,
+    default: ""
+  },
+  activationToken:{
+    type: String,
+    trim: true,
+  },
+  linkExipredAt: {
+    type: Date,
+    default: moment().add(5, 'm')
   },
 },
 { timestamps: true });

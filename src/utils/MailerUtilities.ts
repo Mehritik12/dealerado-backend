@@ -10,7 +10,6 @@ export class MailerUtilities {
 
   public static sendSendgridMail = async (data: any) => {
     try {
-    console.log("inside function")
     var options = {
       auth: {
         api_key: config.get("SENDGRID_SETTING.API_KEY")
@@ -41,9 +40,7 @@ export class MailerUtilities {
         }
       ]
     }
-
     const mailRes = await mailer.sendMail(message);
-    console.log("mailRes", mailRes);
     return mailRes;
   } catch (error) {
     throw new HTTP400Error( 
