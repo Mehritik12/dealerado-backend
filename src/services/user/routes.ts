@@ -82,6 +82,18 @@ export default [
       },
     ],
   },
+    // update admin permissions by super admin
+    {
+      path: currentPathURL + "permission" +"/:id",
+      method: "put",
+      handler: [
+        checkAdminAuthenticate,
+        async (req: Request, res: Response, next: NextFunction) => {
+          const result = await userProfileUpdateByAdmin(req.get(config.get("AUTHORIZATION")), req.params.id,req,  next);
+          res.status(200).send(result);
+        },
+      ],
+    },
   // {
   //   path: currentPathURL + "/:id",
   //   method: "delete",

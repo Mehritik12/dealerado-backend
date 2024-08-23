@@ -3,7 +3,6 @@ import { Utilities } from "../../utils/Utilities";
 import config from "config";
 import { FileUpload } from "../../utils/FileUploadUtilities";
 import { userModel } from "../../models/User";
-import { ADMIN_ROLES, SUPER_ADMIN } from "../../constants";
 import { PermissionModel } from "../../models/Permission";
 import { DEFAULT_PERMISSION } from "../../constants/permission";
 var mongoose = require("mongoose");
@@ -86,6 +85,7 @@ export const getUsers = async (token: any, queryData: any, next: any) => {
     let totalRecords = await userModel.countDocuments(query);
     let result = await userModel
       .find(query)
+      .populate('permissions')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -355,6 +355,49 @@ export const userProfileUpdateByAdmin = async (token: any, userId: any, req: any
 
     await userData.save();
 
+    return Utilities.sendResponsData({
+      code: 200,
+      message: config.get("ERRORS.USER_ERRORS.UPDATE")
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const adminPermissionUpdateBySuperAdmin = async (token: any, userId: any, req: any, next: any) => {
+  try {
+    const bodyData = req.body;
+    const permissions= bodyData?.permissions;
+    const decoded: any = await Utilities.getDecoded(token);
+    if (!decoded) {
+      Utilities.sendResponsData({
+        code: 400,
+        message: config.get("ERRORS.TOKEN_REQUIRED"),
+      });
+    }
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.INVALID_ID"),
+        })
+      );
+    }
+
+    let userData = await userModel.findOne({ _id: userId, isDeleted: false, });
+
+    if (!userData) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.NO_RECORD_FOUND"),
+        })
+      );
+    }
+    if(permissions){
+      await PermissionModel.findOneAndUpdate({userId},{ ...permissions})
+    }
+    
     return Utilities.sendResponsData({
       code: 200,
       message: config.get("ERRORS.USER_ERRORS.UPDATE")

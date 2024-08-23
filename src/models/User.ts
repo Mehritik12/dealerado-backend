@@ -41,7 +41,7 @@ const userSchema = new Schema({
   },
   permissions:{
     type: Schema.Types.ObjectId,
-    ref: 'permissions'
+    ref: 'permission'
   },
   otp: {
     type: String,
