@@ -52,6 +52,7 @@
     },
     "USER_ERRORS": {
       "CREATE": "User created successfully.",
+      "DELETE": "User deleted successfully.",
       "USER_EXISTS": "User already exists.",
       "INVALID_LOGIN": "Invalid Login Details",
       "USER_NOT_EXIST": "User does not exist",
@@ -79,6 +80,15 @@
       "RAGISTER": "User registered.",
       "INVALID_CREDENTIAL": "Invalid credentials",
       "INVALID_PASSWORD":"Invalid password"
+    },
+    "TRANSACTION": {
+      "CREATED": "Wallet credited with amount",
+      "DEDUCTED": "Deducted from your account",
+      "FETCHED":"Record(s) fetched successfully",
+      "TYPE":{
+        "DEBIT":"DEBIT",
+        "CREDIT":"CREDIT"
+      }
     },
     "UNKNOWN_ERROR": "Something went wrong",
     "NO_RECORD_FOUND": "No record found",

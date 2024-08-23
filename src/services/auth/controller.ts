@@ -87,7 +87,7 @@ export const register = async (bodyData: any, next: any) => {
 export const userLogin = async (bodyData: any, next: any) => {
   try {
     const { email, password } = bodyData;
-    const user: any = await userModel.findOne({ $or: [{ email: email}, { mobileNumber: email}], otpVerified: true, isDeleted: false, role: { $eq: "user" } });
+    const user: any = await userModel.findOne({ $or: [{ email: email}, { mobileNumber: email}],isDeleted: false, role: { $eq: "user" } });
     if (!user) {
       throw new HTTP400Error(
         Utilities.sendResponsData({
@@ -290,7 +290,7 @@ export const adminLogin = async (bodyData: any, next: any) => {
       throw new HTTP400Error(
         Utilities.sendResponsData({
           code: 400,
-          message: config.get("ERRORS.COMMON_ERRORS.USER_NOT_EXIST"),
+          message: config.get("ERRORS.USER_ERRORS.USER_NOT_EXIST"),
         })
       );
     }
