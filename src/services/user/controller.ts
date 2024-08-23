@@ -526,11 +526,12 @@ export const getAllUserTransactions = async (token: any, userId: any, queryData:
 export const getUserWallet = async (token: any, next: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
-    if (!decoded) {
-      Utilities.sendResponsData({ code: 400, message: config.get("ERRORS.TOKEN_REQUIRED") });
-    }
-
-    const aggregateQuery: any = [
+    const aggregateQuery: any  =[
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(decoded.id)
+        }
+      },
       {
         $group: {
           _id: "$userId",
@@ -544,8 +545,31 @@ export const getUserWallet = async (token: any, next: any) => {
             }
           }
         }
+      },
+      {
+        $lookup: {
+          from: "users", 
+          localField: "_id", 
+          foreignField: "_id", 
+          as: "userInfo" 
+        }
+      },
+      {
+        $unwind: "$userInfo" 
+      },
+      {
+        $project: {
+          _id: "$_id",
+          wallet: 1,
+          name: "$userInfo.name", 
+          email: "$userInfo.email",
+          profilePicture: "$userInfo.profilePicture",
+          dealershipName:"$userInfo.dealershipName",
+          mobileNumber:"$userInfo.mobileNumber"
+        }
       }
     ]
+    
 
     const transactionRes = await transactionModel.aggregate(aggregateQuery);
 

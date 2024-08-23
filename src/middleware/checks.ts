@@ -27,7 +27,7 @@ export const checkAuthenticate = (req: Request, res: Response, next: NextFunctio
       next();
     })
     .catch((error) => {
-      //console.log("error",error.message);
-      throw new HTTP403Error({ responseCode: 403, responseMessage: error.message });
+      res.status(403)
+      .send({ responseCode: 403, responseMessage: error.message });
     });
 };
