@@ -17,6 +17,8 @@ const admin = require("firebase-admin");
 const saltRound = 10;
 import ejs from "ejs";
 import { bannerModel } from "../../models/Banner";
+import { DEFAULT_PERMISSION } from "../../constants/permission";
+import { PermissionModel } from "../../models/Permission";
 
 
 // admin.initializeApp({
@@ -263,7 +265,12 @@ export const createSuperAdminUser = async () => {
       adminData.email = adminData.email;
       const pass: string = await bcrypt.hash(adminData.password, saltRound);
       adminData.password = pass;
-      await userModel.create(adminData);
+      let result = await userModel.create(adminData);
+       
+      let defaultPermissions= DEFAULT_PERMISSION['sadmin'];
+      let permission= await PermissionModel.create({userId: result._id?.toString(),...defaultPermissions });
+      await userModel.updateOne({_id: result?._id},{permissions: permission._id?.toString()});
+
       console.log('super admin created.')
     }
   } catch (error) {

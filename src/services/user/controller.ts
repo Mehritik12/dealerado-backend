@@ -4,6 +4,8 @@ import config from "config";
 import { FileUpload } from "../../utils/FileUploadUtilities";
 import { userModel } from "../../models/User";
 import { ADMIN_ROLES, SUPER_ADMIN } from "../../constants";
+import { PermissionModel } from "../../models/Permission";
+import { DEFAULT_PERMISSION } from "../../constants/permission";
 var mongoose = require("mongoose");
 var bcrypt = require('bcryptjs');
 
@@ -12,6 +14,7 @@ export const addUser = async (token: any, req: any, next: any) => {
     const decoded: any = await Utilities.getDecoded(token);
     let bodyData: any;
     bodyData = req.body;
+    let role:any= bodyData?.role|| 'user';
 
     const isMobileExist = await userModel.findOne({
       mobileNumber: bodyData.mobileNumber || "",
@@ -43,6 +46,10 @@ export const addUser = async (token: any, req: any, next: any) => {
     bodyData.createdBy = decoded.id;
     bodyData.updatedBy = decoded.id;
     let result = await userModel.create(bodyData);
+    let defaultPermissions= DEFAULT_PERMISSION[role];
+    let permission= await PermissionModel.create({userId: result._id?.toString(),...defaultPermissions })
+  
+    await userModel.updateOne({_id: result?._id},{permissions: permission._id?.toString()})
     return Utilities.sendResponsData({
       code: 200,
       message: config.get("ERRORS.USER_ERRORS.CREATE"),

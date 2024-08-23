@@ -1,8 +1,9 @@
 import moment from 'moment';
 import * as mongoose from 'mongoose';
-import { GENDERS, USER_ROLES } from '../constants';
+const {Schema,model}= mongoose;
+import { USER_ROLES } from '../constants';
 
-const userSchema = new mongoose.Schema({
+const userSchema = new Schema({
   name: {
     type: String,
     default: ""
@@ -38,6 +39,10 @@ const userSchema = new mongoose.Schema({
     default: "user",
     enum: USER_ROLES
   },
+  permissions:{
+    type: Schema.Types.ObjectId,
+    ref: 'permissions'
+  },
   otp: {
     type: String,
     default: ""
@@ -51,10 +56,10 @@ const userSchema = new mongoose.Schema({
     default: moment().add(1, 'm')
   },
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId
+    type: Schema.Types.ObjectId
   },
   updatedBy: {
-    type: mongoose.Schema.Types.ObjectId
+    type: Schema.Types.ObjectId
   },
   isDeleted: {
     type: Boolean,
@@ -139,4 +144,4 @@ userSchema.set('toJSON', {
   }
 })
 
-export const userModel = mongoose.model('users', userSchema);
+export const userModel = model('users', userSchema);

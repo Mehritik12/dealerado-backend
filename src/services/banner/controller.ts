@@ -34,12 +34,12 @@ export const addBanner = async (token: any, req: any, next: any) => {
 
     if (!isExist) {
       if (req.files) {
-        let fileurl = await FileUpload.uploadFileToAWS(
-          req.files[0],
-          decoded.id,
-          bodyData
-        );
-        bodyData.image = fileurl;
+        // let fileurl = await FileUpload.uploadFileToAWS(
+        //   req.files[0],
+        //   decoded.id,
+        //   bodyData
+        // );
+        // bodyData.image = fileurl;
       }
       bodyData.createdBy = decoded.id;
       bodyData.updatedBy = decoded.id;
