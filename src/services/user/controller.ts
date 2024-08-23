@@ -6,21 +6,23 @@ import { userModel } from "../../models/User";
 import { ADMIN_ROLES, SUPER_ADMIN } from "../../constants";
 import { PermissionModel } from "../../models/Permission";
 import { DEFAULT_PERMISSION } from "../../constants/permission";
+import { transactionModel } from "../../models/Transaction";
 var mongoose = require("mongoose");
 var bcrypt = require('bcryptjs');
+const saltRound = 10;
 
 export const addUser = async (token: any, req: any, next: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
     let bodyData: any;
     bodyData = req.body;
-    let role:any= bodyData?.role|| 'user';
+    let role: any = bodyData?.role || 'user';
 
     const isMobileExist = await userModel.findOne({
       mobileNumber: bodyData.mobileNumber || "",
       isDeleted: false
     });
-    
+
     if (isMobileExist) {
       throw new HTTP400Error(
         Utilities.sendResponsData({
@@ -45,11 +47,13 @@ export const addUser = async (token: any, req: any, next: any) => {
     }
     bodyData.createdBy = decoded.id;
     bodyData.updatedBy = decoded.id;
+    let hashedPassword = await Utilities.cryptPassword(bodyData.password);
+    bodyData.password = hashedPassword;
     let result = await userModel.create(bodyData);
-    let defaultPermissions= DEFAULT_PERMISSION[role];
-    let permission= await PermissionModel.create({userId: result._id?.toString(),...defaultPermissions })
-  
-    await userModel.updateOne({_id: result?._id},{permissions: permission._id?.toString()})
+    let defaultPermissions = DEFAULT_PERMISSION[role];
+    let permission = await PermissionModel.create({ userId: result._id?.toString(), ...defaultPermissions })
+
+    await userModel.updateOne({ _id: result?._id }, { permissions: permission._id?.toString() })
     return Utilities.sendResponsData({
       code: 200,
       message: config.get("ERRORS.USER_ERRORS.CREATE"),
@@ -94,7 +98,7 @@ export const getUsers = async (token: any, queryData: any, next: any) => {
       code: 200,
       message: config.get("ERRORS.USER_ERRORS.FETCH"),
       data: result,
-      totalRecord:totalRecords
+      totalRecord: totalRecords
     });
   } catch (error) {
     next(error);
@@ -232,6 +236,48 @@ export const updateUser = async (token: any, req: any, next: any) => {
   }
 };
 
+export const deleteUser = async (token: any, userId: any, next: any) => {
+  try {
+    const decoded: any = await Utilities.getDecoded(token);
+    if (!decoded) {
+      Utilities.sendResponsData({
+        code: 400,
+        message: config.get("ERRORS.TOKEN_REQUIRED"),
+      });
+    }
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.INVALID_ID"),
+        })
+      );
+    }
+
+    let userData = await userModel.findOne({ _id: userId, isDeleted: false });
+
+    if (!userData) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.NO_RECORD_FOUND"),
+        })
+      );
+    }
+
+    userData.isDeleted = true;
+    await userData.save();
+
+    return Utilities.sendResponsData({
+      code: 200,
+      message: config.get("ERRORS.USER_ERRORS.DELETE"),
+      data: {},
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const changePassword = async (token: any, bodyData: any, next: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
@@ -340,7 +386,7 @@ export const userProfileUpdateByAdmin = async (token: any, userId: any, req: any
     userData.mobileNumber = bodyData.mobileNumber || userData.mobileNumber;
     userData.name = bodyData.name || userData.name;
     userData.profilePicture = bodyData.profilePicture || userData.profilePicture;
-    userData.isKyc= bodyData.isKyc || userData.isKyc
+    userData.isKyc = bodyData.isKyc || userData.isKyc
     userData.updatedBy = decoded.id || userData.updatedBy;
     // if (req.files) {
     //   const file = req.files;
@@ -359,6 +405,156 @@ export const userProfileUpdateByAdmin = async (token: any, userId: any, req: any
       code: 200,
       message: config.get("ERRORS.USER_ERRORS.UPDATE")
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addMoneyToUserAccount = async (token: any, bodyData: any, next: any) => {
+  try {
+    const decoded: any = await Utilities.getDecoded(token);
+    if (!decoded) {
+      Utilities.sendResponsData({ code: 400, message: config.get("ERRORS.TOKEN_REQUIRED") });
+    }
+    if (!mongoose.Types.ObjectId.isValid(bodyData.userId)) {
+      throw new HTTP400Error(
+        Utilities.sendResponsData({
+          code: 400,
+          message: config.get("ERRORS.INVALID_ID"),
+        })
+      );
+    }
+    bodyData.createdBy = decoded.id;
+    const userTrasaction = await transactionModel.create(bodyData)
+    return Utilities.sendResponsData({
+      code: 200,
+      message: bodyData.type == config.get("ERRORS.TRANSACTION.TYPE.DEBIT")
+        ? `${bodyData.amount} ${config.get("ERRORS.TRANSACTION.DEDUCTED")}` :
+        `${config.get("ERRORS.TRANSACTION.CREATED")} ${bodyData.amount}`
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllUserTransactions = async (token: any, userId: any, queryData: any, next: any) => {
+  try {
+    const decoded: any = await Utilities.getDecoded(token);
+    if (!decoded) {
+      Utilities.sendResponsData({ code: 400, message: config.get("ERRORS.TOKEN_REQUIRED") });
+    }
+
+    const page: number = parseInt(queryData.page) || 1;
+    const limit: number = parseInt(queryData.limit) || 10;
+    const skip: number = (page - 1) * limit;
+    const search: string = queryData.search || "";
+
+    let query: any = [
+      { userId: new mongoose.Types.ObjectId(userId) }
+    ];
+
+    const aggregateQuery: any = [
+      {
+        $match: { $and: query }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          let: { userId: "$userId" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$userId"] } } }
+          ],
+          as: 'user'
+        }
+      },
+      { $unwind: "$user" },
+      {
+        $lookup: {
+          from: 'users',
+          let: { createdBy: "$createdBy" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$createdBy"] } } } // Correcting the match condition
+          ],
+          as: 'admin'
+        }
+      },
+      { $unwind: "$admin" },
+      {
+        $project: {
+          _id: 1,
+          amount: 1,
+          type: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          user: {
+            _id: "$user._id",
+            name: "$user.name",
+            email: "$user.email",
+            mobileNumber: "$user.mobileNumber",
+            profilePicture: "$user.profilePicture"
+          },
+          createdBy: {
+            _id: "$admin._id",
+            name: "$admin.name",
+            email: "$admin.email",
+            mobileNumber: "$admin.mobileNumber",
+            profilePicture: "$admin.profilePicture",
+            role: "$admin.role"
+          }
+        }
+      },
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit }
+    ];
+
+    const transactionRes = await transactionModel.aggregate(aggregateQuery);
+    const totalCount = await transactionModel.countDocuments({ $and: query })
+
+    return Utilities.sendResponsData({
+      code: 200,
+      message: config.get("ERRORS.TRANSACTION.FETCHED"),
+      data: transactionRes,
+      totalRecord: totalCount
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUserWallet = async (token: any, next: any) => {
+  try {
+    const decoded: any = await Utilities.getDecoded(token);
+    if (!decoded) {
+      Utilities.sendResponsData({ code: 400, message: config.get("ERRORS.TOKEN_REQUIRED") });
+    }
+
+    const aggregateQuery: any = [
+      {
+        $group: {
+          _id: "$userId",
+          wallet: {
+            $sum: {
+              $cond: {
+                if: { $eq: ["$type", "CREDIT"] },
+                then: "$amount",
+                else: { $multiply: ["$amount", -1] }
+              }
+            }
+          }
+        }
+      }
+    ]
+
+    const transactionRes = await transactionModel.aggregate(aggregateQuery);
+
+    return Utilities.sendResponsData({
+      code: 200,
+      message: config.get("ERRORS.TRANSACTION.FETCHED"),
+      data: transactionRes,
+    });
+
   } catch (error) {
     next(error);
   }

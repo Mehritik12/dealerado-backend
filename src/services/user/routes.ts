@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { addUser, changePassword, getUserDetails, getUsers, updateUser, userProfileUpdateByAdmin} from "./controller";
+import { addMoneyToUserAccount, addUser, changePassword, deleteUser, getAllUserTransactions, getUserDetails, getUsers, getUserWallet, updateUser, userProfileUpdateByAdmin} from "./controller";
 import config from "config";
 
 import { checkAuthenticate } from "../../middleware/checks";
-import { validate } from "./middleware/check";
+import { addMoneyValidate, validate } from "./middleware/check";
 import { checkAdminAuthenticate } from "../auth/middleware/check";
 
 
@@ -76,33 +76,58 @@ export default [
     method: "put",
     handler: [
       checkAdminAuthenticate,
+      validate,
       async (req: Request, res: Response, next: NextFunction) => {
         const result = await userProfileUpdateByAdmin(req.get(config.get("AUTHORIZATION")), req.params.id,req,  next);
         res.status(200).send(result);
       },
     ],
   },
-  // {
-  //   path: currentPathURL + "/:id",
-  //   method: "delete",
-  //   handler: [
-  //     checkAdminAuthenticate,
-  //     async (req: Request, res: Response) => {
-  //       const result = await deleteUser(req.get(config.get("AUTHORIZATION")), req.params.id);
-  //       res.status(200).send(result);
-  //     },
-  //   ],
-  // },
-  // {
-  //   path: currentPathURL,
-  //   method: "post",
-  //   handler: [
-  //     checkAdminAuthenticate,
-  //     validate,
-  //     async (req: Request, res: Response, next: NextFunction) => {
-  //       const result = await addUser(req.get(config.get("AUTHORIZATION")), req, next);
-  //       res.status(200).send(result);
-  //     },
-  //   ],
-  // },
+  {
+    path: currentPathURL + "deleteUser"+"/:id",
+    method: "delete",
+    handler: [
+      checkAdminAuthenticate,
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await deleteUser(req.get(config.get("AUTHORIZATION")), req.params.id,next);
+        res.status(200).send(result);
+      },
+    ],
+  },
+
+  // Transfer money to user account.
+  {
+    path: currentPathURL + "addMoney",
+    method: "post",
+    handler: [
+      checkAdminAuthenticate,
+      addMoneyValidate,
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await addMoneyToUserAccount(req.get(config.get("AUTHORIZATION")),req.body,  next);
+        res.status(200).send(result);
+      },
+    ],
+  },
+  {
+    path: currentPathURL + "getAllTransactions"+ "/:id",
+    method: "get",
+    handler: [
+      checkAdminAuthenticate,
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await getAllUserTransactions(req.get(config.get("AUTHORIZATION")),req.params.id,req.query,  next);
+        res.status(200).send(result);
+      },
+    ],
+  },
+  {
+    path: currentPathURL + "userWallet",
+    method: "get",
+    handler: [
+      checkAuthenticate,
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await getUserWallet(req.get(config.get("AUTHORIZATION")),next);
+        res.status(200).send(result);
+      },
+    ],
+  },
 ];
