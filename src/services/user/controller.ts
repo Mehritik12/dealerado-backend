@@ -488,7 +488,155 @@ export const addMoneyToUserAccount = async (token: any, bodyData: any, next: any
   }
 };
 
+// To admin
 export const getAllUserTransactions = async (token: any, userId: any, queryData: any, next: any) => {
+  try {
+    const decoded: any = await Utilities.getDecoded(token);
+    if (!decoded) {
+      Utilities.sendResponsData({ code: 400, message: config.get("ERRORS.TOKEN_REQUIRED") });
+    }
+
+    const page: number = parseInt(queryData.page) || 1;
+    const limit: number = parseInt(queryData.limit) || 10;
+    const skip: number = (page - 1) * limit;
+    const search: string = queryData.search || "";
+
+    let query: any = [
+      { userId: new mongoose.Types.ObjectId(userId) }
+    ];
+
+    const aggregateQuery: any = [
+      {
+        $match: { $and: query }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          let: { userId: "$userId" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$userId"] } } }
+          ],
+          as: 'user'
+        }
+      },
+      { $unwind: "$user" },
+      {
+        $lookup: {
+          from: 'users',
+          let: { createdBy: "$createdBy" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$createdBy"] } } } // Correcting the match condition
+          ],
+          as: 'admin'
+        }
+      },
+      { $unwind: "$admin" },
+      {
+        $project: {
+          _id: 1,
+          amount: 1,
+          type: 1,
+          transactionType:1,
+          createdAt: 1,
+          updatedAt: 1,
+          user: {
+            _id: "$user._id",
+            name: "$user.name",
+            email: "$user.email",
+            mobileNumber: "$user.mobileNumber",
+            profilePicture: "$user.profilePicture"
+          },
+          createdBy: {
+            _id: "$admin._id",
+            name: "$admin.name",
+            email: "$admin.email",
+            mobileNumber: "$admin.mobileNumber",
+            profilePicture: "$admin.profilePicture",
+            role: "$admin.role"
+          }
+        }
+      },
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit }
+    ];
+
+    const transactionRes = await transactionModel.aggregate(aggregateQuery);
+    const totalCount = await transactionModel.countDocuments({ $and: query })
+
+    return Utilities.sendResponsData({
+      code: 200,
+      message: config.get("ERRORS.TRANSACTION.FETCHED"),
+      data: transactionRes,
+      totalRecord: totalCount
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUserWallet = async (token: any, next: any) => {
+  try {
+    const decoded: any = await Utilities.getDecoded(token);
+    const aggregateQuery: any  =[
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(decoded.id)
+        }
+      },
+      {
+        $group: {
+          _id: "$userId",
+          wallet: {
+            $sum: {
+              $cond: {
+                if: { $or: [{ $eq: ["$type", "CREDIT"] }, { $eq: ["$type", "REFUND"] }] },
+                then: "$amount",
+                else: { $multiply: ["$amount", -1] }
+              }
+            }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: "users", 
+          localField: "_id", 
+          foreignField: "_id", 
+          as: "userInfo" 
+        }
+      },
+      {
+        $unwind: "$userInfo" 
+      },
+      {
+        $project: {
+          _id: "$_id",
+          wallet: 1,
+          name: "$userInfo.name", 
+          email: "$userInfo.email",
+          profilePicture: "$userInfo.profilePicture",
+          dealershipName:"$userInfo.dealershipName",
+          mobileNumber:"$userInfo.mobileNumber"
+        }
+      }
+    ]
+    
+    const transactionRes = await transactionModel.aggregate(aggregateQuery);
+    return Utilities.sendResponsData({
+      code: 200,
+      message: config.get("ERRORS.TRANSACTION.FETCHED"),
+      data: transactionRes.length > 0?  transactionRes[0]:{},
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// To admin
+export const getMyWalletTransactions = async (token: any, userId: any, queryData: any, next: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
     if (!decoded) {
@@ -567,67 +715,6 @@ export const getAllUserTransactions = async (token: any, userId: any, queryData:
       message: config.get("ERRORS.TRANSACTION.FETCHED"),
       data: transactionRes,
       totalRecord: totalCount
-    });
-
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getUserWallet = async (token: any, next: any) => {
-  try {
-    const decoded: any = await Utilities.getDecoded(token);
-    const aggregateQuery: any  =[
-      {
-        $match: {
-          userId: new mongoose.Types.ObjectId(decoded.id)
-        }
-      },
-      {
-        $group: {
-          _id: "$userId",
-          wallet: {
-            $sum: {
-              $cond: {
-                if: { $eq: ["$type", "CREDIT"] },
-                then: "$amount",
-                else: { $multiply: ["$amount", -1] }
-              }
-            }
-          }
-        }
-      },
-      {
-        $lookup: {
-          from: "users", 
-          localField: "_id", 
-          foreignField: "_id", 
-          as: "userInfo" 
-        }
-      },
-      {
-        $unwind: "$userInfo" 
-      },
-      {
-        $project: {
-          _id: "$_id",
-          wallet: 1,
-          name: "$userInfo.name", 
-          email: "$userInfo.email",
-          profilePicture: "$userInfo.profilePicture",
-          dealershipName:"$userInfo.dealershipName",
-          mobileNumber:"$userInfo.mobileNumber"
-        }
-      }
-    ]
-    
-
-    const transactionRes = await transactionModel.aggregate(aggregateQuery);
-
-    return Utilities.sendResponsData({
-      code: 200,
-      message: config.get("ERRORS.TRANSACTION.FETCHED"),
-      data: transactionRes,
     });
 
   } catch (error) {

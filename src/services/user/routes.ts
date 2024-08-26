@@ -95,29 +95,18 @@ export default [
         },
       ],
     },
-  // {
-  //   path: currentPathURL + "/:id",
-  //   method: "delete",
-  //   handler: [
-  //     checkAdminAuthenticate,
-  //     async (req: Request, res: Response) => {
-  //       const result = await deleteUser(req.get(config.get("AUTHORIZATION")), req.params.id);
-  //       res.status(200).send(result);
-  //     },
-  //   ],
-  // },
-  // {
-  //   path: currentPathURL,
-  //   method: "post",
-  //   handler: [
-  //     checkAdminAuthenticate,
-  //     validate,
-  //     async (req: Request, res: Response, next: NextFunction) => {
-  //       const result = await addUser(req.get(config.get("AUTHORIZATION")), req, next);
-  //       res.status(200).send(result);
-  //     },
-  //   ],
-  // },
+    {
+      path: currentPathURL + "getUser" +"/:id",
+      method: "get",
+      handler: [
+        checkAdminAuthenticate,
+        validate,
+        async (req: Request, res: Response, next: NextFunction) => {
+          const result = await userProfileUpdateByAdmin(req.get(config.get("AUTHORIZATION")), req.params.id,req,  next);
+          res.status(200).send(result);
+        },
+      ],
+    },
   {
     path: currentPathURL + "deleteUser"+"/:id",
     method: "delete",

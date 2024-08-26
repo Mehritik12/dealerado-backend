@@ -1,6 +1,7 @@
 import { number, required } from 'joi'
 import * as mongoose from 'mongoose'
 const TYPEENUM = ['DEBIT', 'CREDIT']
+const TRANACTIONTYPEFOR = ['Paid For Order','Refund For Order','Points Added']
 
 const transactionSchema = new mongoose.Schema(
   {
@@ -21,6 +22,11 @@ const transactionSchema = new mongoose.Schema(
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'users',
+    },
+    transactionType:{
+      type: String,
+      required: true,
+      enum: TRANACTIONTYPEFOR,
     },
     type: {
       type: String,
