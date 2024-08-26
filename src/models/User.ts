@@ -130,7 +130,7 @@ const userSchema = new Schema({
     default: moment().add(5, 'm')
   },
   isKyc:{
-    type: String,
+    type: Boolean,
     default: false
   }
 },

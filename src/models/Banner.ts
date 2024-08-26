@@ -41,4 +41,4 @@ bannerSchema.set('toJSON', {
   },
 })
 
-export const bannerModel = mongoose.model('banner', bannerSchema)
+export const bannerModel = mongoose.model('banners', bannerSchema)

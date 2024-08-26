@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { addMoneyToUserAccount, addUser, changePassword, deleteUser, getAllUserTransactions, getUserDetails, getUsers, getUserWallet, updateUser, userProfileUpdateByAdmin} from "./controller";
+import { addMoneyToUserAccount, addUser, adminPermissionUpdateBySuperAdmin, changePassword, deleteUser, getAllUserTransactions, getUserDetails, getUsers, getUserWallet, updateUser, userProfileUpdateByAdmin} from "./controller";
 import config from "config";
 
 import { checkAuthenticate } from "../../middleware/checks";
@@ -90,7 +90,7 @@ export default [
       handler: [
         checkAdminAuthenticate,
         async (req: Request, res: Response, next: NextFunction) => {
-          const result = await userProfileUpdateByAdmin(req.get(config.get("AUTHORIZATION")), req.params.id,req,  next);
+          const result = await adminPermissionUpdateBySuperAdmin(req.get(config.get("AUTHORIZATION")), req.params.id,req.body,  next);
           res.status(200).send(result);
         },
       ],

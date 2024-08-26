@@ -93,7 +93,6 @@ export const getUsers = async (token: any, queryData: any, next: any) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
-
     return Utilities.sendResponsData({
       code: 200,
       message: config.get("ERRORS.USER_ERRORS.FETCH"),
@@ -380,14 +379,15 @@ export const userProfileUpdateByAdmin = async (token: any, userId: any, req: any
         })
       );
     }
-
-    userData.dealershipName = bodyData.businessName || userData.dealershipName;
-    userData.email = bodyData.email || userData.email;
-    userData.mobileNumber = bodyData.mobileNumber || userData.mobileNumber;
-    userData.name = bodyData.name || userData.name;
-    userData.profilePicture = bodyData.profilePicture || userData.profilePicture;
-    userData.isKyc = bodyData.isKyc || userData.isKyc
-    userData.updatedBy = decoded.id || userData.updatedBy;
+    userData.dealershipName = bodyData.businessName ?? userData.dealershipName;
+    userData.email = bodyData.email ?? userData.email;
+    userData.mobileNumber = bodyData.mobileNumber ?? userData.mobileNumber;
+    userData.name = bodyData.name ?? userData.name;
+    userData.profilePicture = bodyData.profilePicture ?? userData.profilePicture;
+    userData.isKyc = typeof bodyData.isKyc !== 'undefined' ? bodyData.isKyc : userData.isKyc;
+    userData.updatedBy = decoded.id ?? userData.updatedBy;
+    
+    await userData.save();
     // if (req.files) {
     //   const file = req.files;
     //   const uploadedFile: any = await FileUpload.uploadFileToAWS(
@@ -399,7 +399,6 @@ export const userProfileUpdateByAdmin = async (token: any, userId: any, req: any
     //   userData.profilePicture = uploadedFile.Location;
     // }
 
-    await userData.save();
 
     return Utilities.sendResponsData({
       code: 200,
@@ -410,10 +409,9 @@ export const userProfileUpdateByAdmin = async (token: any, userId: any, req: any
   }
 };
 
-export const adminPermissionUpdateBySuperAdmin = async (token: any, userId: any, req: any, next: any) => {
+export const adminPermissionUpdateBySuperAdmin = async (token: any, userId: any, bodyData: any, next: any) => {
   try {
-    const bodyData = req.body;
-    const permissions= bodyData?.permissions;
+    const permissions= bodyData;
     const decoded: any = await Utilities.getDecoded(token);
     if (!decoded) {
       Utilities.sendResponsData({
@@ -432,10 +430,16 @@ export const adminPermissionUpdateBySuperAdmin = async (token: any, userId: any,
         })
       );
     }
-    if(permissions){
-      await PermissionModel.findOneAndUpdate({userId},{ ...permissions})
+    if (permissions) {
+      await PermissionModel.findOneAndUpdate({ userId },
+        {
+          $set: { ...permissions }
+        },
+        {
+          returnNewDocument: true
+        })
     }
-    
+
     return Utilities.sendResponsData({
       code: 200,
       message: config.get("ERRORS.USER_ERRORS.UPDATE")
