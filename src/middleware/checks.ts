@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { HTTP400Error, HTTP403Error } from "../utils/httpErrors";
 import config from "config";
 import { Utilities } from "../utils/Utilities";
+import { PERMISSION_TYPE } from "../constants";
 
 export const checkSearchParams = (
   req: Request,
@@ -18,8 +19,8 @@ export const checkSearchParams = (
 
 export const checkAuthenticate = (req: Request, res: Response, next: NextFunction) => {
   const token: any = req.get(config.get("AUTHORIZATION"));
-  if(!token){
-    throw new HTTP400Error({responseCode:400,responseMessage:"Token required"});
+  if (!token) {
+    throw new HTTP400Error({ responseCode: 400, responseMessage: "Token required" });
   }
 
   return Utilities.verifyToken(token)
@@ -27,7 +28,7 @@ export const checkAuthenticate = (req: Request, res: Response, next: NextFunctio
       next();
     })
     .catch((error) => {
-      res.status(403)
-      .send({ responseCode: 403, responseMessage: error.message });
+      res.status(400)
+        .send({ responseCode: 400, responseMessage: error.message });
     });
 };

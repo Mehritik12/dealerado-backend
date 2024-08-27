@@ -9,6 +9,7 @@ import {
 import { Utilities } from "../../utils/Utilities";
 import config from "config";
 import { FileUpload } from "../../utils/FileUploadUtilities";
+import { PERMISSION_TYPE } from "../../constants";
 var mongoose = require("mongoose");
 
 
@@ -23,6 +24,7 @@ export const addBanner = async (token: any, req: any, next: any) => {
     //     responseMessage: config.get("ERRORS.USER_ERRORS.INVALID_DESIGNATION"),
     //   });
     // }
+    const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.CREATE_BANNER )
 
     let isExist: any = await bannerModel.findOne({
       name: bodyData.name,
@@ -59,6 +61,8 @@ export const addBanner = async (token: any, req: any, next: any) => {
 export const getBanners = async (token: any, body: any, next: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
+    const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.READ_BANNER )
+
     let skip = body.skip || 0;
     let limit = body.limit || 10;
 
@@ -118,6 +122,8 @@ export const getBannerDetails = async (token: any, id: any, next: any) => {
 export const deleteBanner = async (token: any, id: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
+    const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.DELETE_BANNER )
+
     if (mongoose.Types.ObjectId.isValid(id)) {
       const bannerData = await bannerModel.findOne({ _id: id, isDeleted: false });
       if (!bannerData) {
@@ -146,6 +152,8 @@ export const deleteBanner = async (token: any, id: any) => {
 export const updateBanner = async (token: any, id: any, req: any, next: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
+    const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.DELETE_USER )
+
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new HTTP400Error(

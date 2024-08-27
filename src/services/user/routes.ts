@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { addMoneyToUserAccount, addUser, adminPermissionUpdateBySuperAdmin, changePassword, deleteUser, getAllUserTransactions, getUserDetails, getUsers, getUserWallet, updateUser, userProfileUpdateByAdmin} from "./controller";
+import { addMoneyToUserAccount, addUser, adminPermissionUpdateBySuperAdmin, changePassword, deleteUser, getAllUserTransactions, getUserDetails, getUsers, getUserWallet, updateUser, userProfileUpdateByAdmin } from "./controller";
 import config from "config";
 
 import { checkAuthenticate } from "../../middleware/checks";
@@ -13,7 +13,7 @@ const currentPathURL = basePath + currentPath;
 
 export default [
   {
-    path: currentPathURL+"create",
+    path: currentPathURL + "create",
     method: "post",
     handler: [
       checkAdminAuthenticate,
@@ -25,12 +25,12 @@ export default [
     ],
   },
   {
-    path: currentPathURL+'getAllUsers',
+    path: currentPathURL + 'getAllUsers',
     method: "get",
     handler: [
       checkAdminAuthenticate,
-      async (req: Request, res: Response,next:NextFunction) => {
-        const result = await getUsers(req.get(config.get("AUTHORIZATION")), req.query,next);
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await getUsers(req.get(config.get("AUTHORIZATION")), req.query, next);
         res.status(200).send(result);
       },
     ],
@@ -42,7 +42,7 @@ export default [
     handler: [
       checkAuthenticate,
       async (req: Request, res: Response, next: NextFunction) => {
-        const result = await updateUser(req.get(config.get("AUTHORIZATION")), req,  next);
+        const result = await updateUser(req.get(config.get("AUTHORIZATION")), req, next);
         res.status(200).send(result);
       },
     ],
@@ -64,7 +64,7 @@ export default [
     handler: [
       checkAuthenticate,
       async (req: Request, res: Response, next: NextFunction) => {
-        const result = await changePassword(req.get(config.get("AUTHORIZATION")),req.body, next);
+        const result = await changePassword(req.get(config.get("AUTHORIZATION")), req.body, next);
         res.status(200).send(result);
       },
     ],
@@ -72,48 +72,36 @@ export default [
 
   // update user profile by admin
   {
-    path: currentPathURL + "updateProfile" +"/:id",
+    path: currentPathURL + "updateProfile" + "/:id",
     method: "put",
     handler: [
       checkAdminAuthenticate,
       validate,
       async (req: Request, res: Response, next: NextFunction) => {
-        const result = await userProfileUpdateByAdmin(req.get(config.get("AUTHORIZATION")), req.params.id,req,  next);
+        const result = await userProfileUpdateByAdmin(req.get(config.get("AUTHORIZATION")), req.params.id, req, next);
         res.status(200).send(result);
       },
     ],
   },
-    // update admin permissions by super admin
-    {
-      path: currentPathURL + "permission" +"/:id",
-      method: "put",
-      handler: [
-        checkAdminAuthenticate,
-        async (req: Request, res: Response, next: NextFunction) => {
-          const result = await adminPermissionUpdateBySuperAdmin(req.get(config.get("AUTHORIZATION")), req.params.id,req.body,  next);
-          res.status(200).send(result);
-        },
-      ],
-    },
-    {
-      path: currentPathURL + "getUser" +"/:id",
-      method: "get",
-      handler: [
-        checkAdminAuthenticate,
-        validate,
-        async (req: Request, res: Response, next: NextFunction) => {
-          const result = await userProfileUpdateByAdmin(req.get(config.get("AUTHORIZATION")), req.params.id,req,  next);
-          res.status(200).send(result);
-        },
-      ],
-    },
+  // update admin permissions by super admin
   {
-    path: currentPathURL + "deleteUser"+"/:id",
+    path: currentPathURL + "permission" + "/:id",
+    method: "put",
+    handler: [
+      checkAdminAuthenticate,
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await adminPermissionUpdateBySuperAdmin(req.get(config.get("AUTHORIZATION")), req.params.id, req.body, next);
+        res.status(200).send(result);
+      },
+    ],
+  },
+  {
+    path: currentPathURL + "deleteUser" + "/:id",
     method: "delete",
     handler: [
       checkAdminAuthenticate,
       async (req: Request, res: Response, next: NextFunction) => {
-        const result = await deleteUser(req.get(config.get("AUTHORIZATION")), req.params.id,next);
+        const result = await deleteUser(req.get(config.get("AUTHORIZATION")), req.params.id, next);
         res.status(200).send(result);
       },
     ],
@@ -127,18 +115,18 @@ export default [
       checkAdminAuthenticate,
       addMoneyValidate,
       async (req: Request, res: Response, next: NextFunction) => {
-        const result = await addMoneyToUserAccount(req.get(config.get("AUTHORIZATION")),req.body,  next);
+        const result = await addMoneyToUserAccount(req.get(config.get("AUTHORIZATION")), req.body, next);
         res.status(200).send(result);
       },
     ],
   },
   {
-    path: currentPathURL + "getAllTransactions"+ "/:id",
+    path: currentPathURL + "getAllTransactions" + "/:id",
     method: "get",
     handler: [
       checkAdminAuthenticate,
       async (req: Request, res: Response, next: NextFunction) => {
-        const result = await getAllUserTransactions(req.get(config.get("AUTHORIZATION")),req.params.id,req.query,  next);
+        const result = await getAllUserTransactions(req.get(config.get("AUTHORIZATION")), req.params.id, req.query, next);
         res.status(200).send(result);
       },
     ],
@@ -149,7 +137,7 @@ export default [
     handler: [
       checkAuthenticate,
       async (req: Request, res: Response, next: NextFunction) => {
-        const result = await getUserWallet(req.get(config.get("AUTHORIZATION")),next);
+        const result = await getUserWallet(req.get(config.get("AUTHORIZATION")), next);
         res.status(200).send(result);
       },
     ],

@@ -5,6 +5,9 @@ import * as nodemailer from "nodemailer";
 import { userModel } from "../models/User";
 import { HTTP400Error, HTTP404Error, HTTP403Error } from "./httpErrors";
 import { invalidTokenError } from "./ErrorHandler";
+import { PermissionModel } from "../models/Permission";
+import mongoose from "mongoose";
+import { PERMISSION_TYPE } from "../constants";
 
 export class Utilities {
 
@@ -68,7 +71,7 @@ export class Utilities {
    * @param {string} token - return token
    */
   public static createJWTToken = async (payload: any) => {
-    return jwt.sign(payload, config.get("JWT_SECRET_KEY")||'', { expiresIn: '24h' });
+    return jwt.sign(payload, config.get("JWT_SECRET_KEY") || '', { expiresIn: '24h' });
   };
 
   /**
@@ -200,7 +203,7 @@ export class Utilities {
       uid: user.uid,
     };
 
-    return jwt.sign(claims, config.get("JWT_SECRET_KEY")||'', {
+    return jwt.sign(claims, config.get("JWT_SECRET_KEY") || '', {
       expiresIn: parseInt(config.get("SOCIAL_TOKEN_PERIOD"))
     });
   }
@@ -209,4 +212,40 @@ export class Utilities {
     return Math.random().toString(36).substring(2);
   }
 
+  public static permissionCheck = async (userId: any, permission: string) => {
+    try {
+      const userPermission = await PermissionModel.findOne({ userId: new mongoose.Types.ObjectId(userId) }); 
+      const permissionMap = {
+        [PERMISSION_TYPE.UDPATE_USER]: userPermission?.updateUser,
+        [PERMISSION_TYPE.CREATE_USER]: userPermission?.createUser,
+        [PERMISSION_TYPE.DELETE_USER]: userPermission?.deleteUser,
+        [PERMISSION_TYPE.READ_USER]: userPermission?.readUser,
+
+        [PERMISSION_TYPE.UPDATE_BANNER]: userPermission?.updateBanner,
+        [PERMISSION_TYPE.CREATE_BANNER]: userPermission?.createBanner,
+        [PERMISSION_TYPE.DELETE_BANNER]: userPermission?.deleteBanner,
+        [PERMISSION_TYPE.READ_BANNER]: userPermission?.readBanner,
+
+        [PERMISSION_TYPE.UPDATE_ORDER]: userPermission?.updateOrder,
+        [PERMISSION_TYPE.CREATE_ORDER]: userPermission?.createOrder,
+        [PERMISSION_TYPE.DELETE_ORDER]: userPermission?.deleteOrder,
+        [PERMISSION_TYPE.READ_ORDER]: userPermission?.readOrder,
+
+      };
+  
+      if (permissionMap[permission]) {
+        return true;
+      } else {
+        throw new HTTP400Error(
+          Utilities.sendResponsData({
+            code: 400,
+            message: config.get("ERRORS.PERMISSION_DENIED"),
+          })
+        );
+      }
+    } catch (err) {
+      throw err
+    }
+  };
+  
 }

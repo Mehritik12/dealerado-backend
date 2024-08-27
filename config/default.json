@@ -99,6 +99,7 @@
     "INVALID_ID": "Invalid Id",
     "INVALID_INFORMATION": "Provide valid Information",
     "ACCOUNT_VERIFICATIONS": "Account verification updated.",
-    "SENGRID_ISSUE": "Something went wrong with sendgrid."
+    "SENGRID_ISSUE": "Something went wrong with sendgrid.",
+    "PERMISSION_DENIED": "Do not have permission to access it.Please contact your administrator"
   }
 }

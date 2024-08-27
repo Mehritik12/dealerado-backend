@@ -9,10 +9,13 @@ import { transactionModel } from "../../models/Transaction";
 var mongoose = require("mongoose");
 var bcrypt = require('bcryptjs');
 const saltRound = 10;
+import { PERMISSION_TYPE } from "../../constants";
 
 export const addUser = async (token: any, req: any, next: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
+    const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.CREATE_USER )
+
     let bodyData: any;
     bodyData = req.body;
     let role: any = bodyData?.role || 'user';
@@ -73,6 +76,7 @@ export const getUsers = async (token: any, queryData: any, next: any) => {
 
     const skip: number = (page - 1) * limit;
 
+    const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.READ_USER )
 
     let search = queryData.search;
     let query: any = {
@@ -114,7 +118,7 @@ export const getUserDetails = async (token: any, next: any) => {
       });
     }
     if (mongoose.Types.ObjectId.isValid(decoded.id)) {
-      const userData = await userModel.findOne({
+      const userData:any = await userModel.findOne({
         _id: decoded.id,
         isDeleted: false,
       });
@@ -126,6 +130,9 @@ export const getUserDetails = async (token: any, next: any) => {
           })
         );
       }
+      const userPermission = await PermissionModel.findOne({userId:new mongoose.Types.ObjectId(decoded.id)});
+      userData.permissions = userPermission;
+
       return Utilities.sendResponsData({
         code: 200,
         message: config.get("ERRORS.USER_ERRORS.FETCH"),
@@ -264,6 +271,8 @@ export const deleteUser = async (token: any, userId: any, next: any) => {
       );
     }
 
+    const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.DELETE_USER )
+
     userData.isDeleted = true;
     await userData.save();
 
@@ -332,6 +341,10 @@ export const userProfileUpdateByAdmin = async (token: any, userId: any, req: any
         message: config.get("ERRORS.TOKEN_REQUIRED"),
       });
     }
+
+    // check Permission for admin
+    const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.UDPATE_USER )
+     
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       throw new HTTP400Error(
         Utilities.sendResponsData({
