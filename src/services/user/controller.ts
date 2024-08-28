@@ -552,6 +552,7 @@ export const getAllUserTransactions = async (token: any, userId: any, queryData:
           transactionType:1,
           createdAt: 1,
           updatedAt: 1,
+          description:1,
           user: {
             _id: "$user._id",
             name: "$user.name",
@@ -589,6 +590,7 @@ export const getAllUserTransactions = async (token: any, userId: any, queryData:
   }
 };
 
+// get my wallet balance at user end
 export const getUserWallet = async (token: any, next: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
@@ -728,6 +730,107 @@ export const getMyWalletTransactions = async (token: any, userId: any, queryData
       message: config.get("ERRORS.TRANSACTION.FETCHED"),
       data: transactionRes,
       totalRecord: totalCount
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// to get user balace at admin end
+export const getUserBalance = async (token: any,userId:any, next: any) => {
+  try {
+    const decoded: any = await Utilities.getDecoded(token);
+    const aggregateQuery: any  =[
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId)
+        }
+      },
+      {
+        $group: {
+          _id: "$userId",
+          wallet: {
+            $sum: {
+              $cond: {
+                if: { $or: [{ $eq: ["$type", "CREDIT"] }, { $eq: ["$type", "REFUND"] }] },
+                then: "$amount",
+                else: { $multiply: ["$amount", -1] }
+              }
+            }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: "users", 
+          localField: "_id", 
+          foreignField: "_id", 
+          as: "userInfo" 
+        }
+      },
+      {
+        $unwind: "$userInfo" 
+      },
+      {
+        $project: {
+          _id: "$_id",
+          wallet: 1,
+          name: "$userInfo.name", 
+          email: "$userInfo.email",
+          profilePicture: "$userInfo.profilePicture",
+          dealershipName:"$userInfo.dealershipName",
+          mobileNumber:"$userInfo.mobileNumber"
+        }
+      }
+    ]
+    
+    const transactionRes = await transactionModel.aggregate(aggregateQuery);
+    return Utilities.sendResponsData({
+      code: 200,
+      message: config.get("ERRORS.TRANSACTION.FETCHED"),
+      data: transactionRes.length > 0?  transactionRes[0]:{},
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// to get user balace at admin end
+export const getAllUserBalance = async (token: any, next: any) => {
+  try {
+    const decoded: any = await Utilities.getDecoded(token);
+    const aggregateQuery: any = [
+      {
+        $group: {
+          _id: null,
+          balance: {
+            $sum: {
+              $cond: {
+                if: { $or: [{ $eq: ["$type", "CREDIT"] }, { $eq: ["$type", "REFUND"] }] },
+                then: "$amount",
+                else: { $multiply: ["$amount", -1] }
+              }
+            }
+          }
+        }
+      },
+    ];
+    
+    const transactionRes = await transactionModel.aggregate(aggregateQuery);
+
+    let result = {};
+
+    if(transactionRes.length > 0){
+      delete transactionRes[0]._id;
+      result = transactionRes[0]
+    }
+
+    return Utilities.sendResponsData({
+      code: 200,
+      message: config.get("ERRORS.TRANSACTION.FETCHED"),
+      data:result,
     });
 
   } catch (error) {

@@ -56,9 +56,8 @@ export const addMoneyValidate = (req: Request, res: Response, next: NextFunction
     userId: Joi.string().required().messages({
       "string.empty": "Type can not be empty ex. DEBIT or CREDIT",
     }),
-    transactionType:Joi.string().required().messages({
-      "string.empty": "Transaction for can not be empty ex. 'PaidForOrder','RefundForOrder','PointsAdded'",
-    }),
+    transactionType:Joi.string().optional(),
+    description:Joi.string().optional()
   });
   const { error, value } = schema.validate(req.body, {
     abortEarly: false,

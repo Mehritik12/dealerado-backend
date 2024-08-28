@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { addMoneyToUserAccount, addUser, adminPermissionUpdateBySuperAdmin, changePassword, deleteUser, getAllUserTransactions, getUserDetails, getUsers, getUserWallet, updateUser, userProfileUpdateByAdmin } from "./controller";
+import { addMoneyToUserAccount, addUser, adminPermissionUpdateBySuperAdmin, changePassword, deleteUser, getAllUserBalance, getAllUserTransactions, getUserBalance, getUserDetails, getUsers, getUserWallet, updateUser, userProfileUpdateByAdmin } from "./controller";
 import config from "config";
 
 import { checkAuthenticate } from "../../middleware/checks";
@@ -131,6 +131,7 @@ export default [
       },
     ],
   },
+  // for get my balance [user balance]
   {
     path: currentPathURL + "userWallet",
     method: "get",
@@ -142,4 +143,30 @@ export default [
       },
     ],
   },
+  // Check user balance
+  {
+    path: currentPathURL + "userBalance" + "/:id",
+    method: "get",
+    handler: [
+      checkAdminAuthenticate,
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await getUserBalance(req.get(config.get("AUTHORIZATION")),req.params.id, next);
+        res.status(200).send(result);
+      },
+    ],
+  },
+
+    // calculated all users balance
+    {
+      path: currentPathURL + "allUserBalance",
+      method: "get",
+      handler: [
+        checkAdminAuthenticate,
+        async (req: Request, res: Response, next: NextFunction) => {
+          const result = await getAllUserBalance(req.get(config.get("AUTHORIZATION")), next);
+          res.status(200).send(result);
+        },
+      ],
+    },
+  
 ];
