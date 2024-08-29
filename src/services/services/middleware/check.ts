@@ -7,26 +7,13 @@ import { errorMessageHander } from "../../../utils/ErrorHandler";
 export const validateService = (req: Request, res: Response, next: NextFunction) => {
   const schema = Joi.object({
     name: Joi.string().trim(true).required().messages({
-      "string.empty": "Name can not be empty",
+      "string.empty": "Service Name can not be empty",
     }),
-    email: Joi.string().trim(true).email().required().messages({
-      "string.empty": "Email can not be empty",
-    }),
-    mobileNumber: Joi.string().trim(true).optional(),
-    dealershipName: Joi.string().trim(true).optional(),
-    isKyc: Joi.boolean().optional(),
-    role: Joi.string().trim(true).optional(),
-    image: Joi.string().trim(true).optional(),
-    password: Joi.string()
-      .trim(true)
-      .min(8)
-      .pattern(new RegExp('^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$'))
-      .required()
-      .messages({
-        "string.empty": "Password can not be empty",
-        "string.min": "Password must include atleast 8 characters",
-        "string.pattern.base": "Password must include atleast 1 number and 1 special character"
-      }),
+    image: Joi.object().optional(),
+    content: Joi.string().optional(),
+    description: Joi.string().optional(),
+    parentId: Joi.string().optional(),
+    price: Joi.number().optional()
   });
   const { error, value } = schema.validate(req.body, {
     abortEarly: false,

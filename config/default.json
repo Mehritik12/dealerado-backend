@@ -63,6 +63,10 @@
       "PASSWORD_UPDATED":"Password Updated successfully",
       "LINK_SENT":"A activation link has been sent to your email"
     },
+    "SERVICES":{
+      "FETCH":"Services fetched successfully",
+      "CREATE":"Services created successfully"
+    },
     "OTP_ERRORS": {
       "OTP_REQUIRED": "Please enter otp",
       "INVALID_OTP": "Invalid otp entered",

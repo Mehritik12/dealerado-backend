@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { addService,getServices,getSubServices } from "./controller";
+import { addService, getServices, getSubServices, getSubServicesBySlug, getSubServicesByparentId } from "./controller";
 import config from "config";
 
 import { checkAuthenticate } from "../../middleware/checks";
@@ -46,4 +46,29 @@ export default [
       },
     ],
   },
+
+  {
+    path: currentPathURL + 'getSubServicesBySlug',
+    method: "get",
+    handler: [
+      // checkAdminAuthenticate,
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await getSubServicesBySlug(req, next);
+        res.status(200).send(result);
+      },
+    ],
+  },
+
+  {
+    path: currentPathURL + 'getSubServicesByParentId',
+    method: "get",
+    handler: [
+      // checkAdminAuthenticate,
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await getSubServicesByparentId(req, next);
+        res.status(200).send(result);
+      },
+    ],
+  },
+
 ];
