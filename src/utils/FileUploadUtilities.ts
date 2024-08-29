@@ -6,10 +6,10 @@ import config from "config";
 import path from "path";
 
 const options: any = {
-  secretAccessKey: config.get("AWS.BUCKET.SECRET"),
-  accessKeyId: config.get("AWS.BUCKET.ACCESS_KEY"),
-  region: config.get("AWS.BUCKET.REGION"),
-  endpoint: config.get("AWS.BUCKET.ENDPOINT")
+  secretAccessKey: process.env.BUCKET_SECRET,
+  accessKeyId: process.env.ACCESS_KEY,
+  region: process.env.REGION,
+  endpoint: process.env.ENDPOINT
 };
 
 const storage = multer.diskStorage({
@@ -48,7 +48,7 @@ export class FileUpload {
       }
         let s3Params = {
           ContentType: `${file.mimetype}`,
-          Bucket: "dealeradostorage",
+          Bucket: "dealerado",
           Body: fileContent,
           Key: `${file.originalname}`,
         };
