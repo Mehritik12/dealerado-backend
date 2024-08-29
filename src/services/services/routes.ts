@@ -60,12 +60,12 @@ export default [
   },
 
   {
-    path: currentPathURL + 'getSubServicesByParentId',
+    path: currentPathURL + 'getSubServicesByParentId' + "/:id",
     method: "get",
     handler: [
       // checkAdminAuthenticate,
       async (req: Request, res: Response, next: NextFunction) => {
-        const result = await getSubServicesByparentId(req, next);
+        const result = await getSubServicesByparentId(req.params.id,req.query, next);
         res.status(200).send(result);
       },
     ],

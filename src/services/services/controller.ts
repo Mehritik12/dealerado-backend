@@ -75,11 +75,20 @@ export const getSubServicesBySlug = async (req: any, next: any) => {
   }
 };
 
-export const getSubServicesByparentId = async (req: any, next: any) => {
+export const getSubServicesByparentId = async (serviceId: any,queryData:any, next: any) => {
   try {
-    let bodyData = req.body;
-    let query = { parentId: bodyData.parentId };
-    let result = await servicedModel.find(query);
+
+    const page: number = parseInt(queryData.page) || 1;
+    const limit: number = parseInt(queryData.limit) || 10;
+    const skip: number = (page - 1) * limit;
+
+    let query = { parentId:serviceId };
+
+    let result = await servicedModel.find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+    ;
     return Utilities.sendResponsData({
       code: 200,
       message: config.get("ERRORS.SERVICES.FETCH"),
