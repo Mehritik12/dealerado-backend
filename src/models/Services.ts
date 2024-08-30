@@ -10,7 +10,6 @@ const serviceSchema = new Schema(
     name: {
       type: String,
       required: true,
-      unique: true,
     },
     slug: {
       type: String,
@@ -32,6 +31,18 @@ const serviceSchema = new Schema(
     price: {
       type: Number,
       required: false,
+    },
+    isDeleted:{
+      type: Boolean,
+      default:false,
+    },
+    createdBy:{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
+    },
+    updatedBy:{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
     },
   },
   { timestamps: true }

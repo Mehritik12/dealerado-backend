@@ -64,8 +64,11 @@
       "LINK_SENT":"A activation link has been sent to your email"
     },
     "SERVICES":{
-      "FETCH":"Services fetched successfully",
-      "CREATE":"Services created successfully"
+      "FETCH":"Services fetched successfully.",
+      "CREATE":"Services created successfully.",
+      "DELETE":"Services deleted successfully.",
+      "UPDATE":"Services updated successfully.",
+      "EXIST":"Services already exists with given name."
     },
     "OTP_ERRORS": {
       "OTP_REQUIRED": "Please enter otp",

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { addService, getServices, getSubServices, getSubServicesBySlug, getSubServicesByparentId } from "./controller";
+import { addService, deleteService, getServices, getSubServices, getSubServicesBySlug, getSubServicesByparentId, updateService } from "./controller";
 import config from "config";
 
 import { checkAuthenticate } from "../../middleware/checks";
@@ -66,6 +66,31 @@ export default [
       // checkAdminAuthenticate,
       async (req: Request, res: Response, next: NextFunction) => {
         const result = await getSubServicesByparentId(req.params.id,req.query, next);
+        res.status(200).send(result);
+      },
+    ],
+  },
+
+  // For both service and subservice
+  {
+    path: currentPathURL + 'deleteServiceById' +"/:id",
+    method: "delete",
+    handler: [
+      checkAdminAuthenticate,
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await deleteService(req.get(config.get("AUTHORIZATION")), req.params.id, next);
+        res.status(200).send(result);
+      },
+    ],
+  },
+    // For both service and subservice
+  {
+    path: currentPathURL + 'updateServiceById' +"/:id",
+    method: "put",
+    handler: [
+      checkAdminAuthenticate,
+      async (req: Request, res: Response, next: NextFunction) => {
+        const result = await updateService(req.get(config.get("AUTHORIZATION")), req.params.id,req, next);
         res.status(200).send(result);
       },
     ],

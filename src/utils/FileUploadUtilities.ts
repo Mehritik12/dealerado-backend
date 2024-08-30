@@ -2,15 +2,17 @@ import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import multer from 'multer';
 import * as AWS from "aws-sdk";
-import config from "config";
 import path from "path";
+require('dotenv').config()
+
 
 const options: any = {
-  secretAccessKey: process.env.BUCKET_SECRET,
-  accessKeyId: process.env.ACCESS_KEY,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   region: process.env.REGION,
   endpoint: process.env.ENDPOINT
 };
+
 
 const storage = multer.diskStorage({
 
@@ -46,11 +48,13 @@ export class FileUpload {
       } else {
           newName = `${file.originalname}${fileExt}`;
       }
+
+
         let s3Params = {
           ContentType: `${file.mimetype}`,
           Bucket: "dealerado",
           Body: fileContent,
-          Key: `${file.originalname}`,
+          Key: `${type}/${file.originalname}`,
         };
         try {
           let data = s3.upload(s3Params).promise();
@@ -74,7 +78,7 @@ export class FileUpload {
     oldFile = fileName
 
     const params = {
-      Bucket: `${config.get("AWS.BUCKET.NAME")}`,
+      Bucket: `${process.env.BUCKET_NAME}`,
       Key: `${oldFile}`
       // Key: `${type}/${fileName}`
     };
