@@ -14,7 +14,6 @@ const serviceSchema = new Schema(
     slug: {
       type: String,
       required: true,
-      unique: true,
     },
     content: {
       type: String,

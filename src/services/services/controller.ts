@@ -95,7 +95,7 @@ export const getSubServicesByparentId = async (serviceId: any, queryData: any, n
     const limit: number = parseInt(queryData.limit) || 10;
     const skip: number = (page - 1) * limit;
 
-    let query = { parentId: serviceId };
+    let query = { parentId: serviceId,isDeleted:false };
 
     let result = await servicedModel.find(query)
       .sort({ createdAt: -1 })
@@ -114,6 +114,8 @@ export const getSubServicesByparentId = async (serviceId: any, queryData: any, n
 
 export const deleteService = async (token: any, serviceId: any, next: any) => {
   try {
+
+    console.log(serviceId,"serviceId")
     const decoded: any = await Utilities.getDecoded(token);
     if (!decoded) {
       Utilities.sendResponsData({
