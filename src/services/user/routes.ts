@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { addMoneyToUserAccount, addUser, adminPermissionUpdateBySuperAdmin, changePassword, deleteUser, getAllUserBalance, getAllUserTransactions, getUserBalance, getUserDetails, getUsers, getUserWallet, updateUser, userProfileUpdateByAdmin } from "./controller";
+import { addMoneyToUserAccount, addUser, adminPermissionUpdateBySuperAdmin, changePassword, deleteUser, getAllUserBalance, getAllUserTransactions, getUserBalance, getUserDetails, getUsers, getUserWallet, updateUser, userProfileUpdateByAdmin, getBasicSearch, getAdvancedSearch } from "./controller";
 import config from "config";
 
 import { checkAuthenticate } from "../../middleware/checks";
@@ -10,6 +10,8 @@ import { checkAdminAuthenticate } from "../auth/middleware/check";
 const basePath = config.get("BASE_PATH");
 const currentPath = "user/";
 const currentPathURL = basePath + currentPath;
+
+console.log(currentPath,">>>>> current path>>> ")
 
 export default [
   {
@@ -169,4 +171,26 @@ export default [
       ],
     },
   
+    {
+      path: currentPathURL + "vehicleBasicSearch" +"/:id",
+      method: "get",
+      handler: [
+        async (req: Request, res: Response, next: NextFunction) => {
+          const result = await getBasicSearch(req.get(config.get("AUTHORIZATION")), req.params.id, next);
+          res.status(200).send(result);
+        },
+      ]
+    },
+
+    {
+      path: currentPathURL + "vehicleAdvancedSearch" +"/:id",
+      method: "get",
+      handler: [
+        async (req: Request, res: Response, next: NextFunction) => {
+          const result = await getAdvancedSearch(req.get(config.get("AUTHORIZATION")), req.params.id, next);
+          res.status(200).send(result);
+        },
+      ]
+    }
+    
 ];
