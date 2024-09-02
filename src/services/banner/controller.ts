@@ -16,52 +16,47 @@ var mongoose = require("mongoose");
 export const addBanner = async (token: any, req: any, next: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
-    let bodyData: any;
-    bodyData = req.body;
-    // if (decoded.role !== config.get("ROLES.ADMIN")) {
-    //   throw new HTTP400Error({
-    //     responseCode: 400,
-    //     responseMessage: config.get("ERRORS.USER_ERRORS.INVALID_DESIGNATION"),
-    //   });
-    // }
-    const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.CREATE_BANNER )
 
-    let isExist: any = await bannerModel.findOne({
-      name: bodyData.name,
-      type: bodyData.type,
-      isDeleted: false,
-    });
+    let bodyData: any = req.body;
 
-    console.log("isExist", isExist);
-
-    if (!isExist) {
-      if (req.files) {
-        // let fileurl = await FileUpload.uploadFileToAWS(
-        //   req.files[0],
-        //   decoded.id,
-        //   bodyData
-        // );
-        // bodyData.image = fileurl;
-      }
-      bodyData.createdBy = decoded.id;
-      bodyData.updatedBy = decoded.id;
-      let result = await bannerModel.create(bodyData);
-      return { responseCode: 200, responseMessage: "success", data: result };
-    } else {
+    if (decoded.role == 'users') {
       throw new HTTP400Error({
         responseCode: 400,
-        responseMessage: "banner exist"
+        responseMessage: config.get("ERRORS.USER_ERRORS.INVALID_DESIGNATION"),
       });
     }
+
+    let isBannerExist = await bannerModel.findOne({ name: bodyData.name, isDeleted: false });
+    if (isBannerExist) {
+      throw new HTTP400Error({
+        responseCode: 400,
+        responseMessage: config.get("ERRORS.BANNER.EXIST"),
+      });
+    }
+
+    if (req.files && req.files.length >0) {
+      const file = req.files[0];
+      const uploadedFile: any = await FileUpload.uploadFileToAWS(
+        file,
+        req.body.type || "banners",
+        null
+      );
+      bodyData.image = uploadedFile.Location;
+    }
+
+    bodyData.createdBy = decoded.id;
+    let result = await bannerModel.create(bodyData);
+    return { responseCode: 200,  responseMessage: config.get("ERRORS.BANNER.CREATE"), data: result };
+
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
+
 export const getBanners = async (token: any, body: any, next: any) => {
   try {
-    const decoded: any = await Utilities.getDecoded(token);
-    const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.READ_BANNER )
+    // const decoded: any = await Utilities.getDecoded(token);
 
     let skip = body.skip || 0;
     let limit = body.limit || 10;
@@ -122,73 +117,65 @@ export const getBannerDetails = async (token: any, id: any, next: any) => {
 export const deleteBanner = async (token: any, id: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
-    const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.DELETE_BANNER )
+    // const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.DELETE_BANNER)
 
     if (mongoose.Types.ObjectId.isValid(id)) {
       const bannerData = await bannerModel.findOne({ _id: id, isDeleted: false });
       if (!bannerData) {
         throw new HTTP400Error(
-          Utilities.sendResponsData({ code: 400, message: "Banner not found"})
+          Utilities.sendResponsData({ code: 400, message: config.get("ERRORS.NO_RECORD_FOUND") })
         );
       }
       bannerData.isDeleted = true;
       await bannerData.save();
       return {
         responseCode: 200,
-        responseMessage: "success",
-        data: bannerData,
+        responseMessage:config.get("ERRORS.BANNER.DELETE"),
       };
     } else {
       throw new HTTP400Error(
-        Utilities.sendResponsData({ code: 400, message: "Invalid Id"})
+        Utilities.sendResponsData({ code: 400, message: config.get("ERRORS.INVALID_ID") })
       );
     }
   } catch (error) {
     console.log(error);
   }
 };
-
 // update banner
 export const updateBanner = async (token: any, id: any, req: any, next: any) => {
   try {
     const decoded: any = await Utilities.getDecoded(token);
-    const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.DELETE_USER )
-
-
+    // const isPermission = await Utilities.permissionCheck(decoded.id, PERMISSION_TYPE.DELETE_USER)
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new HTTP400Error(
-        Utilities.sendResponsData({ code: 400, message: "Invalid Id" })
+        Utilities.sendResponsData({ code: 400, message: config.get("ERRORS.INVALID_ID") })
       );
     }
-
     let bannerData = await bannerModel.findOne({ _id: id, isDeleted: false });
-
     if (!bannerData) {
       throw new HTTP400Error(
-        Utilities.sendResponsData({ code: 400, message: "Banner not found" })
+        Utilities.sendResponsData({ code: 400, message: config.get("ERRORS.NO_RECORD_FOUND") })
       );
     }
 
     let bodyData: any = req.body;
-
     if (req.files && req.files.length > 0) {
-      let fileurl = await FileUpload.uploadFileToAWS(
-        req.files[0],
-        decoded.id,
-        bodyData
+      const file = req.files[0];
+      const uploadedFile: any = await FileUpload.uploadFileToAWS(
+        file,
+        req.body.type || "services",
+        null
       );
-      bodyData.image = fileurl;
+      bodyData.image = uploadedFile.Location;
     }
-
     bodyData.updatedBy = decoded.id;
-
     let updatedBanner = await bannerModel.findByIdAndUpdate(id, bodyData, {
       new: true,
     });
 
     return {
       responseCode: 200,
-      responseMessage: "success",
+      responseMessage: config.get("ERRORS.BANNER.UPDATE"),
       data: updatedBanner,
     };
   } catch (error) {

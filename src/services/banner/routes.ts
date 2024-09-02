@@ -1,8 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { addBanner, deleteBanner, getBannerDetails, getBanners, updateBanner } from "./controller";
 import config from "config";
-
-import { checkAuthenticate } from "../../middleware/checks";
 import { validate } from "./middleware/check";
 import { checkAdminAuthenticate } from "../auth/middleware/check";
 
@@ -17,7 +15,7 @@ export default [
     method: "post",
     handler: [
       checkAdminAuthenticate,
-      validate,
+      // validate,
       async (req: Request, res: Response, next: NextFunction) => {
         const result = await addBanner(req.get(config.get("AUTHORIZATION")), req, next);
         res.status(200).send(result);
@@ -28,7 +26,7 @@ export default [
     path: currentPathURL,
     method: "get",
     handler: [
-      checkAdminAuthenticate,
+      // checkAdminAuthenticate,
       async (req: Request, res: Response,next:NextFunction) => {
         const result = await getBanners(req.get(config.get("AUTHORIZATION")), req.query,next);
         res.status(200).send(result);

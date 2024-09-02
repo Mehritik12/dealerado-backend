@@ -8,12 +8,11 @@ const bannerSchema = new mongoose.Schema(
     },
     image: {
       type: String,
-      default: '',
+      required: false,
     },
-    type: {
+    description: {
       type: String,
-      default: 'TOP',
-      enum:['TOP','BOTTOM','MIDDLE']
+      default: '',
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -23,10 +22,6 @@ const bannerSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
     },
     isDeleted: {
-      type: Boolean,
-      default: false,
-    },
-    isDisable: {
       type: Boolean,
       default: false,
     },

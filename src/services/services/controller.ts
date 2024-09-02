@@ -114,8 +114,6 @@ export const getSubServicesByparentId = async (serviceId: any, queryData: any, n
 
 export const deleteService = async (token: any, serviceId: any, next: any) => {
   try {
-
-    console.log(serviceId,"serviceId")
     const decoded: any = await Utilities.getDecoded(token);
     if (!decoded) {
       Utilities.sendResponsData({

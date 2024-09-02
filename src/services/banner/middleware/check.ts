@@ -9,12 +9,8 @@ export const validate = (req: Request, res: Response, next: NextFunction) => {
     name: Joi.string().trim(true).required().messages({
       "string.empty": "Name can not be empty",
     }),
-    image: Joi.string().trim(true).messages({
-      "string.empty": "Image can not be empty",
-    }),
-    type: Joi.required().messages({
-      "string.empty": "Image can not be empty",
-    }),
+    image: Joi.object().optional(),
+    description:Joi.string().trim().optional(),
   });
   const { error, value } = schema.validate(req.body, {
     abortEarly: false,

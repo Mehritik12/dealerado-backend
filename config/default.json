@@ -70,6 +70,13 @@
       "UPDATE":"Services updated successfully.",
       "EXIST":"Services already exists with given name."
     },
+    "BANNER":{
+      "FETCH":"Banner(s) fetched successfully.",
+      "CREATE":"Banner(s) created successfully.",
+      "DELETE":"Banner(s) deleted successfully.",
+      "UPDATE":"Banner(s) updated successfully.",
+      "EXIST":"Banner(s) already exists with given name."
+    },
     "OTP_ERRORS": {
       "OTP_REQUIRED": "Please enter otp",
       "INVALID_OTP": "Invalid otp entered",
